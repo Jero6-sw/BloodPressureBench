@@ -1,0 +1,90 @@
+#include "web_server.h"
+#include "config.h"
+#include "peripherals.h"
+#include "procedure.h"
+
+#include <WiFi.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+#include <LittleFS.h>
+
+WebServer server(80);
+
+// ---------- GET /api/status : statut temps reel (poll par index.html) ----------
+void sendJson() {
+  StaticJsonDocument<1024> d;
+  d["version"] = FW_VERSION;
+  d["abp"] = S.abpOk;
+  d["pressure"] = S.pressure;
+  d["amp"] = S.amp;
+  d["ratio"] = S.ratio;
+  d["motor"] = S.motorOn;
+  d["valve"] = S.valveOpen;
+  d["step"] = S.step;
+  d["approval"] = S.waitingApproval;
+  d["approvalMsg"] = S.approvalMsg;
+  String o;
+  serializeJson(d, o);
+  server.send(200, "application/json", o);
+}
+
+// ---------- POST /api/value : saisies operateur (formulaire du rapport) ----------
+void handleValue() {
+  StaticJsonDocument<256> d;
+  deserializeJson(d, server.arg("plain"));
+  const char* k = d["key"] | "";
+  float v = d["value"] | 0.0f;
+  if      (!strcmp(k, "mano"))    S.pReads[d["idx"] | 0] = v;
+  else if (!strcmp(k, "display")) S.displayed[d["idx"] | 0] = v;
+  else if (!strcmp(k, "temp"))    S.tempC = v;
+  else if (!strcmp(k, "boyle"))   S.boyleV = (760.0f + S.pressure) * 10.0f / (v != 0 ? v : 1);  // V = P_abs * dV / dP
+  else if (!strcmp(k, "operator"))strlcpy(S.operatorName, d["value"] | "", sizeof(S.operatorName));
+  else if (!strcmp(k, "sn"))      strlcpy(S.deviceSN, d["value"] | "", sizeof(S.deviceSN));
+  else if (!strcmp(k, "fwdev"))   strlcpy(S.fwDevice, d["value"] | "", sizeof(S.fwDevice));
+  server.send(200, "application/json", "{}");
+}
+
+// ---------- GET /api/report : JSON de session -> PDF genere par le navigateur ----------
+void handleReport() {
+  StaticJsonDocument<2048> d;
+  d["version"] = FW_VERSION;
+  d["pressure"] = S.pressure;
+  d["leakSlope"] = S.leakSlope;
+  d["leakSlopeArm"] = S.leakSlopeArm;
+  d["boyleV"] = S.boyleV;
+  JsonArray pr = d.createNestedArray("pReads");
+  for (float x : S.pReads) pr.add(x);
+  JsonArray dp = d.createNestedArray("displayed");
+  for (float x : S.displayed) dp.add(x);
+  d["tempC"] = S.tempC;
+  d["operator"] = S.operatorName;
+  d["deviceSN"] = S.deviceSN;
+  d["fwDevice"] = S.fwDevice;
+  String o;
+  serializeJson(d, o);
+  server.send(200, "application/json", o);
+}
+
+// ---------- Endpoints de procedure ----------
+void handleStart() {
+  String which = server.arg("procedure");
+  if (which == "test") procedureStart(TESTS, N_TESTS);
+  else                 procedureStart(CALIB, N_CALIB);
+  server.send(200, "application/json", "{}");
+}
+
+void handleApprove() {
+  S.waitingApproval = false;
+  procedureAdvance();
+  server.send(200, "application/json", "{}");
+}
+
+void setupServer() {
+  server.on("/api/status",  HTTP_GET,  sendJson);
+  server.on("/api/report",  HTTP_GET,  handleReport);
+  server.on("/api/start",   HTTP_POST, handleStart);
+  server.on("/api/approve", HTTP_POST, handleApprove);
+  server.on("/api/value",   HTTP_POST, handleValue);
+  server.serveStatic("/", LittleFS, "/www/");   // page web + jsPDF stockes en flash
+  server.begin();
+}
