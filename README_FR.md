@@ -188,7 +188,7 @@ La configuration de stockage « tout fermé » devient l'état par défaut à la
 
 **Points de vigilance** : V1 est en série dans le chemin oscillant (restriction et volume mort négligeables, absorbés dans le V\_boyle ; son siège = surface de fuite potentielle → auto-test d'isolement à chaque session, pente < 1 mmHg/min) ; exigence 10 ans : acheter **3-4 vannes d'avance** (joint NBR/bobine sans garantie constructeur) ; pilotage par **ULN2803** (7 voies Darlington) ; raccords G1/8 → adaptateurs Luer/tuyau 4 mm.
 
-**Bilan** : +60-90 € (équivalent aux robinets inox), contre l'automatisation complète des procédures et la traçabilité des configurations.
+**Bilan** : +≈ 80 € (7 vannes SMC à 10 €/pièce + ULN2803 + raccords G1/8), contre l'automatisation complète des procédures et la traçabilité des configurations.
 
 
 ---
@@ -214,6 +214,13 @@ TMC2209 (stepper)
 Électrovanne 12 V
   GPIO7 ── R 1 kΩ ── base TIP120 ; émetteur GND ; collecteur → vanne
   autre borne vanne → +12 V ; diode 1N4007 inversée aux bornes
+
+Variante automatisée — 7 électrovannes (SMC VT307V-6G1-01, 12 V) pilotées en GPIO via ULN2803 :
+  V0 = GPIO15   V1 = GPIO16   V2 = GPIO17   V3 = GPIO18
+  V4 = GPIO19   V5 = GPIO21   V6 = GPIO7 (purge)
+  GPIO ── R 1 kΩ ── IN1..IN7 du ULN2803 ; OUT1..OUT7 → borne basse de chaque vanne
+  autre borne vanne → +12 V ; broche COM du ULN2803 → +12 V (diodes de roue libre internes)
+  Brochages définis dans config.h (PIN_V0 … PIN_V6) — l'inversion logique NC/NO est dans valves.cpp
 ```
 
 Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes les parties. Variante électrovannes : remplacer les 7 étages TIP120 par un **ULN2803** (7 voies Darlington, brochage d'entrée identique).
@@ -235,7 +242,7 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | 1 | — | Vis M4 + contre-écrou (butée réglable) |
 | 1 | — | Châssis alu percé / profilé 2020 + équerres |
 | 1 | — | Graisse silicone (maintenance annuelle) |
-| 1 | — | Manomètre anéroïde **classe 0,5** vérifié (Riester Big Ben précision ou Welch Allyn) |
+| 1 | — | Manomètre anéroïde vérifié — Riester **Big Ben précision** (tolérance **±2 mmHg**) ou équivalent (ERKA, Welch Allyn) |
 
 **Bras artificiel** : chambre à air **700c butyle** coupée à 1 m (~5 €) ; **gaine tressée polyamide Ø 80-100 mm** (Techflex F6, 1 m) ; *(option)* mousse **EPDM** 3 mm à cellules fermées ; colliers Serflex + feutre indélébile.
 
@@ -275,12 +282,12 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | --- | --- |
 | Mécanique | 60–85 € |
 | Bras artificiel | 15–25 € |
-| Manomètre anéroïde classe 0,5 vérifié | 50–90 € |
+| Manomètre anéroïde vérifié (Riester Big Ben précision, ±2 mmHg) | €50–90 |
 | Électronique | 70–100 € |
-| Pneumatique | 25–40 € |
+| Pneumatique | 25–40 € *(variante § 3 f : +80–90 €)* |
 | Étalonnage initial ABP | 80–120 € (une fois) |
 | Recalibrage ABP tous les 2 ans | 40–60 € / opération |
-| **Total investissement** | **≈ 300–460 €** |
+| **Total investissement** | **≈ 300–460 €** *(≈ 380–550 € avec la variante automatisée § 3 f)* |
 
 ---
 

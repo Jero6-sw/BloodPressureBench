@@ -19,7 +19,9 @@
 
 // ---------- Electrovannes 2/2 (variante automatisee, voir docs/automatisation-electrovannes.md) ----------
 // Vannes DIRECT-ACTIONNEES des 0 bar obligatoire (circuit a 0,04 MPa max).
-// Series validees : 2V025-06 / 2V130-15, ou SMC VT307. Pilotage TIP120 ou ULN2803.
+// Retenues : SMC VT307V-6G1-01 (12 V DC, ~10 EUR) ou 2V025-06 en solution budget.
+// EXCLUES : 2V130-15 / 2W025-06 (diaphragme pilote, mini 0,02-0,05 MPa) et 3V210-08 (0,15 MPa).
+// Pilotage GPIO via ULN2803 (7 voies Darlington, diodes de roue libre internes).
 // NO = normalement ouverte (energisee = fermee) ; NC = normalement fermee.
 #define PIN_V0       15   // V0 (S1 serie, NO)      : fermee = confinement (S1 45 deg)
 #define PIN_V1       16   // V1 (PULSATION, NO)     : ouverte = seringue <-> M (mesure)

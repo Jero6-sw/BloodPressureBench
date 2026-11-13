@@ -37,7 +37,7 @@ La page et jsPDF sont stockés dans la partition **LittleFS** de l'ESP32 :
 
 ## Variante électrovannes
 
-Avec la variante automatisée (README_FR § 3 f, 7 vannes 2/2 NC/NO pilotées par ULN2803), les positions S1-S4 ne sont plus des gestes manuels : `valvesApply()` applique chaque configuration de la matrice, `valveLeakTest()` vérifie l'isolement de chaque vanne (pente < 1 mmHg/min) avant chaque session, et l'état « tout fermé » (stockage) est l'état par défaut à la coupure de courant. Les brochages des 7 vannes sont définis dans `config.h`.
+Les brochages des 7 vannes sont définis dans `config.h` : `PIN_V0`=GPIO15, `PIN_V1`=GPIO16, `PIN_V2`=GPIO17, `PIN_V3`=GPIO18, `PIN_V4`=GPIO19, `PIN_V5`=GPIO21, `PIN_V6`=GPIO7 (purge) — GPIO → ULN2803 → bobines 12 V.
 
 ## Notes de production
 

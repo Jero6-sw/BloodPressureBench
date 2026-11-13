@@ -146,7 +146,7 @@ The "all closed" storage configuration becomes the default state on power loss. 
 
 **Watch points**: V1 sits in series in the oscillation path (negligible restriction and dead volume, absorbed in the Boyle measurement; its seat is a potential leak surface → isolation self-test at every session, slope < 1 mmHg/min); 10-year requirement: buy **3-4 spare valves** (NBR seal/coil without manufacturer warranty); drive via a **ULN2803** (7 Darlington channels); G1/8 fittings → Luer/4 mm tube adapters.
 
-**Bottom line**: +€60-90 (on par with stainless stopcocks) in exchange for fully automated procedures and configuration traceability.
+**Bottom line**: ~+€80 (7 SMC valves at €10/piece + ULN2803 + G1/8 fittings), in exchange for fully automated procedures and configuration traceability.
 
 
 ---
@@ -172,6 +172,13 @@ TMC2209 (stepper)
 12 V solenoid valve
   GPIO7 ── R 1 kΩ ── TIP120 base ; emitter GND ; collector → valve
   other valve terminal → +12 V ; 1N4007 flyback diode
+
+Automated variant — 7 solenoid valves (SMC VT307V-6G1-01, 12 V) GPIO-driven through a ULN2803:
+  V0 = GPIO15   V1 = GPIO16   V2 = GPIO17   V3 = GPIO18
+  V4 = GPIO19   V5 = GPIO21   V6 = GPIO7 (purge)
+  GPIO ── 1 kΩ ── ULN2803 IN1..IN7; OUT1..OUT7 → low terminal of each valve
+  other valve terminal → +12 V; ULN2803 COM pin → +12 V (internal flyback diodes)
+  Pin assignments live in config.h (PIN_V0 … PIN_V6) — the NC/NO logic inversion sits in valves.cpp
 ```
 
 Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-valve variant: replace the 7 TIP120 stages with a **ULN2803** (7 Darlington channels, identical input pinout).
@@ -193,7 +200,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 | 1 | — | M4 screw + locknut (adjustable travel stop) |
 | 1 | — | Drilled aluminum chassis / 2020 profile |
 | 1 | — | Silicone grease (annual maintenance) |
-| 1 | — | Verified **class 0.5 aneroid gauge** (Riester Big Ben precision or Welch Allyn) |
+| 1 | — | Verified aneroid manometer — Riester **Big Ben precision** (**±2 mmHg** tolerance) or equivalent (ERKA, Welch Allyn) |
 
 **Artificial arm**: 700c butyl inner tube cut to 1 m (~5 €); braided polyamide sleeve Ø 80-100 mm (Techflex F6, 1 m); *(optional)* 3 mm closed-cell EPDM foam; hose clamps + permanent marker.
 
@@ -233,12 +240,12 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 | --- | --- |
 | Mechanics | €60–85 |
 | Artificial arm | €15–25 |
-| Verified class 0.5 aneroid gauge | €50–90 |
+| Verified aneroid gauge (Riester Big Ben precision, ±2 mmHg) | €50–90 |
 | Electronics | €70–100 |
-| Pneumatics | €25–40 |
+| Pneumatics | €25–40 *(§ 3 f variant: +€80–90)* |
 | Initial ABP calibration | €80–120 (once) |
 | ABP recalibration every 2 years | €40–60 / operation |
-| **Total investment** | **≈ €300–460** |
+| **Total investment** | **≈ €300–460** *(≈ €380–550 with the § 3 f automated variant)* |
 
 ---
 
