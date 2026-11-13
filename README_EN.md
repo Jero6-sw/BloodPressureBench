@@ -128,7 +128,7 @@ The manual stopcocks S1-S4 can be replaced by ESP32-driven solenoid valves: no m
 | 3V210-08 (3/2) | pressure-assisted | 0.15 MPa ❌ | Excluded |
 | **SMC VT307 / VT307V** | **direct** poppet, 0 → 0.7 MPa | **0 MPa** ✅ | **Retained** — premium (~€30-50) |
 
-VT307 details: `3G1/4G1/5G1/6G1` = port size (Rc 1/8 → 1/2); `-01/-02` suffix = **orifice diameter** (small/large — take -01, Ø 2 mm, ample for 2 mL/s); `VT307V` = **vacuum spec** with reduced internal leakage — recommended in the measurement path; `VT307W` = V + energy-saving; `VT307E` = continuous duty. **Chosen reference (acquired at ~€10/piece)**: **`VT307V-6G1-01` DC12 V** — 6G1 port = Rc 1/2, larger than the nominal 3G1: plan for **Rc 1/2 → 1/8 reducers** (or Ø 8/6 mm push-in fittings + 4 mm tube adapter). One reference for all 7 roles, including the purge valve. Advantage: **universal porting** — the same valve is wired NC or NO depending on plumbing, one stock reference.
+VT307 nomenclature: `6` = **12 V DC voltage**, `G1` = **lead wire, 30 cm**, `-01/-02` suffix = **orifice diameter** (small/large — -01 = Ø 2 mm, ample for 2 mL/s); `VT307V` = **vacuum spec** with reduced internal leakage — recommended in the measurement path; `VT307W` = V + energy-saving; `VT307E` = continuous duty. **Retained reference (acquired at ~€10/piece)**: **`VT307V-6G1-01` DC 12 V**, native **Rc 1/8** port — no reducer needed, G1/8 fittings → Luer/4 mm tube adapters. One reference for all 7 roles, including the purge valve. Advantage: **universal porting** — the same valve is wired NC or NO depending on plumbing, one stock reference.
 
 **7-valve architecture** (S1 emulated by 2 valves; a single 3/2 cannot realize the three states):
 
@@ -209,7 +209,6 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 | 1 | 4×7 mm silicone tubing (30 cm max) — or semi-rigid PU/PA if edges too soft |
 | 3 | Luer T-fittings |
 | *(Automated variant, § 3 f)* | **7 direct-acting 2/2 solenoid valves from 0 bar** — **SMC VT307V-6G1-01 DC12 V** (~€10/pc, chosen) or 2V025-06 — + **ULN2803**; replace S1-S4 |
-| *(Automated variant, § 3 f)* | 7 **Rc 1/2 → 1/8 reducers** (or Ø 8/6 mm push-in + 4 mm adapter) for the 6G1 ports |
 | 1 | 12 V miniature 2/2 solenoid valve (**SMC VT307V-6G1-01 DC12 V**) |
 | 1 | **10 mL Luer-Lok calibration syringe** (Boyle measurement, on the free S2 port) |
 

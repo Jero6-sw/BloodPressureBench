@@ -18,15 +18,16 @@ Le circuit plafonne à ~300 mmHg (**0,04 MPa**). Les électrovannes pneumatiques
 | 3V210-08 (3/2) | assisté | 0,15 MPa ❌ | 3 mm / G1/4 | ~15 € | **Exclue** (1 125 mmHg mini) |
 | **SMC VT307 / VT307V** | poppet **direct** | **0 MPa** ✅ | 2-3 mm / Rc 1/8 → 1/2 | ~30-50 € | **Retenue** — qualité |
 
-**Détails SMC VT307** :
-- `3G1 / 4G1 / 5G1 / 6G1` = taille de port (Rc 1/8, 1/4, 3/8, 1/2) → prendre **3G1** (Rc 1/8) ;
-- suffixe `-01 / -02` = **diamètre d'orifice** (petit / gros) → prendre **-01** (Ø 2 mm, largement suffisant pour 2 mL/s) ;
+**Nomenclature SMC VT307** :
+- premier code numérique (`6`) = **tension bobine : 12 V DC** (compatible pilotage ULN2803) ;
+- `G1` = **connectique : fil 30 cm** (d'autres codes : grommet, connecteur DIN…) ;
+- suffixe `-01 / -02` = **diamètre d'orifice** (petit / gros) → **-01** = Ø 2 mm, largement suffisant pour 2 mL/s ;
 - `VT307V` = variante **spécification vide** (vacuum) à **fuite interne réduite** → recommandée pour les vannes du chemin de mesure (V1, V5) ;
 - `VT307W` = V + économie d'énergie (bobine) ; `VT307E` = service continu (100 % ED) ;
 - **Porting universel** : la même vanne se câble en NC ou NO selon le branchement → une seule référence en stock pour les 7 rôles.
 
 **Référence retenue (achat effectué, ~10 €/pièce)** : **`SMC VT307V-6G1-01` DC12 V** ×7.
-- Port **6G1 = Rc 1/2**, plus gros que le 3G1 nominal → prévoir 7 **réductions Rc 1/2 → 1/8** (ou raccords push-in Ø 8/6 mm + adaptateur vers tuyau 4 mm) ;
+- Port **Rc 1/8** natif (le code `6G1` concerne la tension et la connectique, pas la taille de port) → aucun réducteur à prévoir, raccords G1/8 → adaptateurs Luer/tuyau 4 mm ;
 - Orifice -01 (Ø 2 mm) : hydraulique identique, aucun impact sur les fronts de pression ;
 - Variante **V** (vacuum, fuite interne réduite) sur tout le banc, chemin de mesure inclus — et cette même référence peut servir de vanne de purge (V6).
 - Alternative budget non retenue : `2V025-06` ×7.
