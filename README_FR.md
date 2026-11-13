@@ -170,7 +170,7 @@ Les robinets manuels S1-S4 peuvent être remplacés par des électrovannes pilot
 | 3V210-08 (3/2) | assisté | 0,15 MPa ❌ | Exclue |
 | **SMC VT307 / VT307V** | poppet **direct**, 0 → 0,7 MPa | **0 MPa** ✅ | **Retenue** — qualité (~30-50 €) |
 
-Détails VT307 : `3G1/4G1/5G1/6G1` = taille de port (Rc 1/8 → 1/2 — prendre **3G1**) ; suffixe `-01/-02` = **diamètre d'orifice** (petit/gros — prendre -01, Ø 2 mm, suffisant pour 2 mL/s) ; `VT307V` = variante **spécification vide** à fuite interne réduite — recommandée sur le chemin de mesure ; `VT307W` = V + économie d'énergie ; `VT307E` = service continu. Atout : **porting universel** — la même vanne se câble NC ou NO selon le branchement, une seule référence en stock.
+Détails VT307 : `3G1/4G1/5G1/6G1` = taille de port (Rc 1/8 → 1/2) ; suffixe `-01/-02` = **diamètre d'orifice** (petit/gros — prendre -01, Ø 2 mm, suffisant pour 2 mL/s) ; `VT307V` = variante **spécification vide** à fuite interne réduite — recommandée sur le chemin de mesure ; `VT307W` = V + économie d'énergie ; `VT307E` = service continu. **Référence choisie (acquise à ~10 €/pièce)** : **`VT307V-6G1-01` DC12 V** — port 6G1 = Rc 1/2, plus gros que le 3G1 nominal : prévoir des **réductions Rc 1/2 → 1/8** (ou raccords push-in Ø 8/6 mm + adaptateur tuyau 4 mm). Une seule référence pour les 7 rôles, y compris la vanne de purge. Atout : **porting universel** — la même vanne se câble NC ou NO selon le branchement, une seule référence en stock.
 
 **Architecture à 7 vannes** (S1 émulé par 2 vannes, une 3/2 ne réalisant pas les 3 états) :
 
@@ -250,8 +250,9 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | 2 | **Clapets anti-retour Luer basse pression** (cracking ≤ 5 mbar) : CV1 (admission), CV2 (refoulement) |
 | 1 | Tuyau silicone 4×7 mm (30 cm maxi) — ou PU/PA semi-rigide si fronts trop mous |
 | 3 | Raccords en T Luer |
-| *(Variante automatisée, § 3 f)* | **7 électrovannes 2/2 direct-actionnées dès 0 bar** (2V025-06 ou SMC VT307V-3G1-01) + **ULN2803** — remplacent S1-S4 |
-| 1 | Électrovanne 2/2 miniature 12 V (**SMC VT307-5G-01**) — purge automatique |
+| *(Variante automatisée, § 3 f)* | **7 électrovannes 2/2 direct-actionnées dès 0 bar** — **SMC VT307V-6G1-01 DC12 V** (~10 €/pc, choisies) ou 2V025-06 — + **ULN2803** ; remplacent S1-S4 |
+| *(Variante automatisée, § 3 f)* | 7 **réductions Rc 1/2 → 1/8** (ou push-in Ø 8/6 mm + adaptateur 4 mm) pour les ports 6G1 |
+| 1 | Électrovanne 2/2 miniature 12 V (**SMC VT307V-6G1-01 DC12 V**) — purge automatique |
 | 1 | **Seringue de calibration 10 mL Luer-Lok** (mesure Boyle, sur le port libre de S2) |
 
 ### 5 c/ Électronique

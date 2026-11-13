@@ -25,7 +25,11 @@ Le circuit plafonne à ~300 mmHg (**0,04 MPa**). Les électrovannes pneumatiques
 - `VT307W` = V + économie d'énergie (bobine) ; `VT307E` = service continu (100 % ED) ;
 - **Porting universel** : la même vanne se câble en NC ou NO selon le branchement → une seule référence en stock pour les 7 rôles.
 
-**Références recommandées** : budget = `2V025-06` ×7 ; premium = `SMC VT307V-3G1-01` ×7 (ou VT307-3G1-01 hors chemin de mesure).
+**Référence retenue (achat effectué, ~10 €/pièce)** : **`SMC VT307V-6G1-01` DC12 V** ×7.
+- Port **6G1 = Rc 1/2**, plus gros que le 3G1 nominal → prévoir 7 **réductions Rc 1/2 → 1/8** (ou raccords push-in Ø 8/6 mm + adaptateur vers tuyau 4 mm) ;
+- Orifice -01 (Ø 2 mm) : hydraulique identique, aucun impact sur les fronts de pression ;
+- Variante **V** (vacuum, fuite interne réduite) sur tout le banc, chemin de mesure inclus — et cette même référence peut servir de vanne de purge (V6).
+- Alternative budget non retenue : `2V025-06` ×7.
 
 ## Table de vannes et matrice de configurations
 
