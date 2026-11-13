@@ -10,6 +10,7 @@ Firmware du serveur embarqué du banc (ESP32-S3-DevKitC-1-N8R2, Arduino IDE ou P
 | `config.h` | Brochage, constantes pneumatiques, identifiants WiFi |
 | `peripherals.h/.cpp` | **Gestion périphériques** : capteur ABP (I2C), moteur (TMC2209), électrovanne, tâche d'acquisition 100 Hz, métriques d'amplitude et de forme |
 | `procedure.h/.cpp` | **Moteur de procédure** : étapes de l'auto-diagnostic et du test, approbation manuelle bloquante |
+| `valves.h/.cpp` | **Électrovannes** (variante automatisée, README § 3 f) : application de la matrice de configurations (`valvesApply()`), auto-test d'isolement par vanne (`valveLeakTest()`), état de sécurité à la coupure |
 | `web_server.h/.cpp` | **Serveur web** : API REST (`/api/status`, `/api/start`, `/api/approve`, `/api/value`, `/api/report`), fichiers statiques |
 | `www/index.html` | Interface web : statut temps réel, modales d'approbation, formulaire de session |
 | `www/report.js` | **Impression / rapport PDF** : assemblage du PDF **côté navigateur** via jsPDF, téléchargement local |
@@ -33,6 +34,10 @@ La page et jsPDF sont stockés dans la partition **LittleFS** de l'ESP32 :
 2. S'y connecter depuis un navigateur (téléphone ou PC) — l'interface s'ouvre à la racine ;
 3. Suivre la procédure guidée d'auto-diagnostic puis de test ; chaque geste manuel (positions S1-S4, chuck, brassard, seringue de calibration) requiert une **approbation bloquante** ;
 4. En fin de session, compléter le formulaire et générer le **rapport PDF**.
+
+## Variante électrovannes
+
+Avec la variante automatisée (README_FR § 3 f, 7 vannes 2/2 NC/NO pilotées par ULN2803), les positions S1-S4 ne sont plus des gestes manuels : `valvesApply()` applique chaque configuration de la matrice, `valveLeakTest()` vérifie l'isolement de chaque vanne (pente < 1 mmHg/min) avant chaque session, et l'état « tout fermé » (stockage) est l'état par défaut à la coupure de courant. Les brochages des 7 vannes sont définis dans `config.h`.
 
 ## Notes de production
 

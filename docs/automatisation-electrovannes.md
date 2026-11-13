@@ -4,11 +4,28 @@ Remplace les robinets manuels S1-S4 par des électrovannes pilotées par l'ESP32
 
 ## Contrainte de sélection — vannes direct-actionnées dès 0 bar
 
+> ⚠️ Correction : la **2V130** est à **diaphragme piloté** (comme la 2W), contrairement à la 2V025 qui est à piston direct. Seules les vannes **direct-actionnées dès 0 bar** conviennent.
+
 Le circuit plafonne à ~300 mmHg (**0,04 MPa**). Les électrovannes pneumatiques **assistées par pression** (séries 2W, 3V, 4V — pression mini 0,02 à 0,15 MPa) **ne s'ouvriraient jamais** à nos pressions : exclues. Exemple : la 3V210-08 (mini 0,15 MPa = 1 125 mmHg) est inutilisable ici.
 
-**Séries validées** (poppet direct, 0 MPa → 0,8 MPa, ~10-15 €) :
-- `2V025-06` / `2V130-15` (orifice 2,5 / 3 mm, bobine 12 V DC)
-- `SMC VT307-5G-01` (déjà en nomenclature pour la purge)
+### Comparatif détaillé des vannes candidates
+
+| Vanne | Principe | Pression mini | Orifice / ports | Prix | Verdict |
+|---|---|---|---|---|---|
+| **2V025-06** (AirTAC et clones) | poppet **direct** | **0 MPa** ✅ | 2,5 mm / G1/8 | ~10 € | **Retenue** — budget |
+| 2V130-15 | **diaphragme piloté** | ~0,05 MPa ❌ | 3 mm / G1/2 | ~12 € | **Exclue** — pilotée, ne s'ouvre pas à nos pressions |
+| 2W025-06 | diaphragme | ~0,02 MPa (150 mmHg) ❌ | 2,5 mm / G1/8 | ~8 € | **Exclue** — échoue à basse pression (purge à 0, Boyle) |
+| 3V210-08 (3/2) | assisté | 0,15 MPa ❌ | 3 mm / G1/4 | ~15 € | **Exclue** (1 125 mmHg mini) |
+| **SMC VT307 / VT307V** | poppet **direct** | **0 MPa** ✅ | 2-3 mm / Rc 1/8 → 1/2 | ~30-50 € | **Retenue** — qualité |
+
+**Détails SMC VT307** :
+- `3G1 / 4G1 / 5G1 / 6G1` = taille de port (Rc 1/8, 1/4, 3/8, 1/2) → prendre **3G1** (Rc 1/8) ;
+- suffixe `-01 / -02` = **diamètre d'orifice** (petit / gros) → prendre **-01** (Ø 2 mm, largement suffisant pour 2 mL/s) ;
+- `VT307V` = variante **spécification vide** (vacuum) à **fuite interne réduite** → recommandée pour les vannes du chemin de mesure (V1, V5) ;
+- `VT307W` = V + économie d'énergie (bobine) ; `VT307E` = service continu (100 % ED) ;
+- **Porting universel** : la même vanne se câble en NC ou NO selon le branchement → une seule référence en stock pour les 7 rôles.
+
+**Références recommandées** : budget = `2V025-06` ×7 ; premium = `SMC VT307V-3G1-01` ×7 (ou VT307-3G1-01 hors chemin de mesure).
 
 ## Table de vannes et matrice de configurations
 

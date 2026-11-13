@@ -156,6 +156,41 @@ Liaison **purement pneumatique, aucun contact mécanique** entre le banc et le b
 
 Chaîne de mesure : le capteur ABP mesure la **pression du bras** (étalon) ; l'appareil mesure la **pression de son propre brassard**. La comparaison dans le temps révèle la dérive de l'ensemble sous test, le stimulus étant identique de session en session.
 
+### 3 f/ Variante d'automatisation — électrovannes 2/2 à la place des robinets
+
+Les robinets manuels S1-S4 peuvent être remplacés par des électrovannes pilotées par l'ESP32 : plus aucun geste pneumatique manuel, matrice de configurations exécutée et journalisée par le firmware. Détails complets : [docs/automatisation-electrovannes.md](docs/automatisation-electrovannes.md).
+
+**Contrainte de sélection — direct-actionnées dès 0 bar** : le circuit plafonne à ~300 mmHg (**0,04 MPa**). Les vannes assistées par pression (2W, 2V130, 3V, 4V — mini 0,02 à 0,15 MPa) ne s'ouvriraient jamais : exclues. Comparatif :
+
+| Vanne | Principe | Pression mini | Verdict |
+| --- | --- | --- | --- |
+| **2V025-06** (AirTAC et clones) | poppet **direct**, orifice 2,5 mm, G1/8 | **0 MPa** ✅ | **Retenue** — budget (~10 €) |
+| 2V130-15 | **diaphragme piloté** | ~0,05 MPa ❌ | Exclue |
+| 2W025-06 | diaphragme | ~0,02 MPa (150 mmHg) ❌ | Exclue — échoue à basse pression (purge à 0, Boyle) |
+| 3V210-08 (3/2) | assisté | 0,15 MPa ❌ | Exclue |
+| **SMC VT307 / VT307V** | poppet **direct**, 0 → 0,7 MPa | **0 MPa** ✅ | **Retenue** — qualité (~30-50 €) |
+
+Détails VT307 : `3G1/4G1/5G1/6G1` = taille de port (Rc 1/8 → 1/2 — prendre **3G1**) ; suffixe `-01/-02` = **diamètre d'orifice** (petit/gros — prendre -01, Ø 2 mm, suffisant pour 2 mL/s) ; `VT307V` = variante **spécification vide** à fuite interne réduite — recommandée sur le chemin de mesure ; `VT307W` = V + économie d'énergie ; `VT307E` = service continu. Atout : **porting universel** — la même vanne se câble NC ou NO selon le branchement, une seule référence en stock.
+
+**Architecture à 7 vannes** (S1 émulé par 2 vannes, une 3/2 ne réalisant pas les 3 états) :
+
+| Vanne | Type | Rôle | Coupure de courant |
+| --- | --- | --- | --- |
+| V0 | NO | série sur l'alimentation seringue (fermée = S1 45°) | ouverte — sans risque (Schrader scelle le bras) |
+| V1 | NO | seringue ↔ nœud M (PULSATION) | ouverte — **zéro watt pendant la mesure** |
+| V2 | NC | seringue ↔ branche clapets (POMPE) | fermée ✅ |
+| V3 | NC | manomètre ↔ M (S2) | fermée ✅ |
+| V4 | NC | bras ↔ banc (S3) | fermée ✅ (état de sécurité) |
+| V5 | NO | ligne CV2 ↔ M (S4) | fermée ✅ |
+| V6 | NC | purge atmosphère | fermée ✅ |
+
+La configuration de stockage « tout fermé » devient l'état par défaut à la coupure de courant. Firmware : `valves.h/.cpp` (`valvesApply()`, `valveLeakTest()`).
+
+**Points de vigilance** : V1 est en série dans le chemin oscillant (restriction et volume mort négligeables, absorbés dans le V\_boyle ; son siège = surface de fuite potentielle → auto-test d'isolement à chaque session, pente < 1 mmHg/min) ; exigence 10 ans : acheter **3-4 vannes d'avance** (joint NBR/bobine sans garantie constructeur) ; pilotage par **ULN2803** (7 voies Darlington) ; raccords G1/8 → adaptateurs Luer/tuyau 4 mm.
+
+**Bilan** : +60-90 € (équivalent aux robinets inox), contre l'automatisation complète des procédures et la traçabilité des configurations.
+
+
 ---
 
 ## 4. Câblage électronique
@@ -181,7 +216,7 @@ TMC2209 (stepper)
   autre borne vanne → +12 V ; diode 1N4007 inversée aux bornes
 ```
 
-Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes les parties.
+Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes les parties. Variante électrovannes : remplacer les 7 étages TIP120 par un **ULN2803** (7 voies Darlington, brochage d'entrée identique).
 
 ---
 
@@ -215,6 +250,7 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | 2 | **Clapets anti-retour Luer basse pression** (cracking ≤ 5 mbar) : CV1 (admission), CV2 (refoulement) |
 | 1 | Tuyau silicone 4×7 mm (30 cm maxi) — ou PU/PA semi-rigide si fronts trop mous |
 | 3 | Raccords en T Luer |
+| *(Variante automatisée, § 3 f)* | **7 électrovannes 2/2 direct-actionnées dès 0 bar** (2V025-06 ou SMC VT307V-3G1-01) + **ULN2803** — remplacent S1-S4 |
 | 1 | Électrovanne 2/2 miniature 12 V (**SMC VT307-5G-01**) — purge automatique |
 | 1 | **Seringue de calibration 10 mL Luer-Lok** (mesure Boyle, sur le port libre de S2) |
 
@@ -265,6 +301,7 @@ ESP32_Software/
 ├── config.h                 # Brochage, constantes, identifiants WiFi
 ├── peripherals.h/.cpp       # Gestion périphériques : capteur ABP, moteur, vanne, acquisition 100 Hz
 ├── procedure.h/.cpp         # Moteur de procédure : étapes auto-diagnostic et test
+├── valves.h/.cpp           # Électrovannes (variante § 3 f) : matrice de configurations, auto-test d'isolement
 ├── web_server.h/.cpp        # Serveur web : API REST, fichiers statiques
 └── www/
     ├── index.html           # Interface web (statut, modales d'approbation, formulaire)
@@ -276,6 +313,8 @@ ESP32_Software/
 ## 8. Protocole
 
 ### 8 a/ Auto-diagnostic du banc (avant chaque session)
+
+> **Variante automatisée (§ 3 f)** : toutes les configurations ci-dessous sont appliquées automatiquement par le firmware (`valvesApply()`), et chaque vanne passe un **auto-test d'isolement** (`valveLeakTest()`, pente < 1 mmHg/min) avant la session — les approbations manuelles ne concernent plus que le montage physique (brassard, chuck, seringue de calibration).
 
 États des robinets — **S1** : ① PULSATION / ② POMPE / ③ 45° ; **S2** : ① OUVERT / ② FERMÉ ; **S3** : ① OUVERT / ② FERMÉ (isolement du bras) ; **S4** : ① OUVERT / ② FERMÉ (isolement des clapets).
 

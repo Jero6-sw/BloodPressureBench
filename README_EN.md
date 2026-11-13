@@ -114,6 +114,41 @@ Purely pneumatic, no mechanical contact between bench and arm: silicone tubing (
 
 Measurement chain: the ABP sensor measures the **arm pressure** (standard); the device measures **its own cuff pressure**. Comparing both over time reveals the drift of the assembly under test, the stimulus being identical session after session.
 
+### 3 f/ Automation variant — 2/2 solenoid valves instead of stopcocks
+
+The manual stopcocks S1-S4 can be replaced by ESP32-driven solenoid valves: no manual pneumatic gesture left, configuration matrix executed and logged by the firmware. Full details: [docs/automatisation-electrovannes.md](docs/automatisation-electrovannes.md).
+
+**Selection constraint — direct-acting from 0 bar**: the circuit tops out at ~300 mmHg (**0.04 MPa**). Pressure-assisted valves (2W, 2V130, 3V, 4V series — minimum 0.02-0.15 MPa) would never open: excluded. Comparison:
+
+| Valve | Principle | Min pressure | Verdict |
+| --- | --- | --- | --- |
+| **2V025-06** (AirTAC and clones) | **direct** poppet, 2.5 mm orifice, G1/8 | **0 MPa** ✅ | **Retained** — budget (~€10) |
+| 2V130-15 | **pilot-diaphragm** | ~0.05 MPa ❌ | Excluded |
+| 2W025-06 | diaphragm | ~0.02 MPa (150 mmHg) ❌ | Excluded — fails at low pressure (purge to 0, Boyle) |
+| 3V210-08 (3/2) | pressure-assisted | 0.15 MPa ❌ | Excluded |
+| **SMC VT307 / VT307V** | **direct** poppet, 0 → 0.7 MPa | **0 MPa** ✅ | **Retained** — premium (~€30-50) |
+
+VT307 details: `3G1/4G1/5G1/6G1` = port size (Rc 1/8 → 1/2 — take **3G1**); `-01/-02` suffix = **orifice diameter** (small/large — take -01, Ø 2 mm, ample for 2 mL/s); `VT307V` = **vacuum spec** with reduced internal leakage — recommended in the measurement path; `VT307W` = V + energy-saving; `VT307E` = continuous duty. Advantage: **universal porting** — the same valve is wired NC or NO depending on plumbing, one stock reference.
+
+**7-valve architecture** (S1 emulated by 2 valves; a single 3/2 cannot realize the three states):
+
+| Valve | Type | Role | Power loss |
+| --- | --- | --- | --- |
+| V0 | NO | in series on the syringe supply (closed = S1 45°) | open — harmless (Schrader seals the arm) |
+| V1 | NO | syringe ↔ node M (PULSATION) | open — **zero watt during measurement** |
+| V2 | NC | syringe ↔ check-valve branch (PUMP) | closed ✅ |
+| V3 | NC | gauge ↔ M (S2) | closed ✅ |
+| V4 | NC | arm ↔ bench (S3) | closed ✅ (safe state) |
+| V5 | NO | CV2 line ↔ M (S4) | closed ✅ |
+| V6 | NC | atmosphere purge | closed ✅ |
+
+The "all closed" storage configuration becomes the default state on power loss. Firmware: `valves.h/.cpp` module (`valvesApply()`, `valveLeakTest()`).
+
+**Watch points**: V1 sits in series in the oscillation path (negligible restriction and dead volume, absorbed in the Boyle measurement; its seat is a potential leak surface → isolation self-test at every session, slope < 1 mmHg/min); 10-year requirement: buy **3-4 spare valves** (NBR seal/coil without manufacturer warranty); drive via a **ULN2803** (7 Darlington channels); G1/8 fittings → Luer/4 mm tube adapters.
+
+**Bottom line**: +€60-90 (on par with stainless stopcocks) in exchange for fully automated procedures and configuration traceability.
+
+
 ---
 
 ## 4. Electronic wiring
@@ -139,7 +174,7 @@ TMC2209 (stepper)
   other valve terminal → +12 V ; 1N4007 flyback diode
 ```
 
-Watch out: TMC2209 logic at 3V3; single common ground for all parts.
+Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-valve variant: replace the 7 TIP120 stages with a **ULN2803** (7 Darlington channels, identical input pinout).
 
 ---
 
@@ -173,6 +208,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts.
 | 2 | Low-pressure Luer check valves (cracking ≤ 5 mbar): CV1 (intake), CV2 (output) |
 | 1 | 4×7 mm silicone tubing (30 cm max) — or semi-rigid PU/PA if edges too soft |
 | 3 | Luer T-fittings |
+| *(Automated variant, § 3 f)* | **7 direct-acting 2/2 solenoid valves from 0 bar** (2V025-06 or SMC VT307V-3G1-01) + **ULN2803** — replace S1-S4 |
 | 1 | 12 V miniature 2/2 solenoid valve (**SMC VT307-5G-01**) |
 | 1 | **10 mL Luer-Lok calibration syringe** (Boyle measurement, on the free S2 port) |
 
@@ -223,6 +259,7 @@ ESP32_Software/
 ├── config.h                 # Pinout, constants, WiFi credentials
 ├── peripherals.h/.cpp       # Device management: ABP sensor, motor, valve, 100 Hz acquisition
 ├── procedure.h/.cpp         # Procedure engine: self-diagnostic and test steps
+├── valves.h/.cpp           # Solenoid valves (variant § 3 f): configuration matrix, isolation self-test
 ├── web_server.h/.cpp        # Web server: REST API, static files
 └── www/
     ├── index.html           # Web UI (status, approval modals, form)
@@ -234,6 +271,8 @@ ESP32_Software/
 ## 8. Protocol
 
 ### 8 a/ Bench self-diagnostic (before every session)
+
+> **Automated variant (§ 3 f)**: every configuration below is applied automatically by the firmware (`valvesApply()`), and each valve passes an **isolation self-test** (`valveLeakTest()`, slope < 1 mmHg/min) before the session — manual approvals then cover only physical assembly (cuff, chuck, calibration syringe).
 
 Valve states — **S1**: ① PULSATION / ② PUMP / ③ 45°; **S2**: ① OPEN / ② CLOSED; **S3**: ① OPEN / ② CLOSED (arm isolation); **S4**: ① OPEN / ② CLOSED (check-valve isolation).
 
