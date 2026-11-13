@@ -36,6 +36,14 @@
 </div>
 
 <div class="card">
+  <h2>Patient (à sélectionner en début de test)</h2>
+  <label>Liste prédéfinie (config.h)
+    <select id="f_patient"></select>
+  </label>
+  <div class="k" style="font-size:.75rem;color:#777">Le nom est enregistré avec les mesures ; l'envoi des mesures de tension est chiffré (AES-256-GCM sur MQTT TLS).</div>
+</div>
+
+<div class="card">
   <h2>Procédures</h2>
   <button onclick="start('calib')">Auto-diagnostic (avant chaque session)</button>
   <button class="sec" onclick="start('test')">Test (5 mesures)</button>
@@ -66,6 +74,7 @@
     </label>
   </div>
   <button onclick="saveForm(); generateReportPDF()">Générer le rapport PDF</button>
+  <button class="sec" onclick="saveForm(); publishMqtt()">Publier sur MQTT (chiffré)</button>
 </div>
 
 <div id="modal"><div class="box">
@@ -111,12 +120,24 @@ async function pushValue(kind) {
   await fetch('/api/value', { method: 'POST', body: JSON.stringify(body) });
 }
 async function saveForm() {
-  var fields = [['operator', el('#f_operator').value], ['sn', el('#f_sn').value],
+  var fields = [['operator', el('#f_operator').value], ['patient', el('#f_patient').value], ['sn', el('#f_sn').value],
                 ['fwdev', el('#f_fwdev').value], ['temp', +el('#f_temp').value]];
   for (var i = 0; i < fields.length; i++) {
     await fetch('/api/value', { method: 'POST', body: JSON.stringify({ key: fields[i][0], value: fields[i][1] }) });
   }
 }
+async function loadPatients() {
+  try {
+    const r = await (await fetch('/api/patients')).json();
+    var s = el('#f_patient');
+    r.patients.forEach(function (p) { var o = document.createElement('option'); o.textContent = p; s.appendChild(o); });
+  } catch (e) {}
+}
+async function publishMqtt() {
+  await fetch('/api/publish', { method: 'POST' });
+  alert('Publication MQTT demandée (voir réponse /api/publish).');
+}
+loadPatients();
 poll();
 </script>
 </body>

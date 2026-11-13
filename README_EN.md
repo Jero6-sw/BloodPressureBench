@@ -2,7 +2,7 @@
 
 **Principle**: check the drift over time of the monitor + cuff assembly by submitting it to a **rigorously reproducible** mechanical stimulus — an artificial "arm" whose parameters do not age. An identical stimulus must produce an identical response: any variation over time = drift of the assembly under test.
 
-**Requirements**: fully automated bench, reliable for **10+ years**, **with no component replacement** (sole exception: periodic recalibration of the reference sensor, an external operation).
+| Standard recalibration | €0 — replaced by the internal 3-step drift check (§ 8 a) |
 
 > The diagrams in `docs/` are labeled in French; the tables and text below are complete in English.
 
@@ -200,7 +200,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 | 1 | — | M4 screw + locknut (adjustable travel stop) |
 | 1 | — | Drilled aluminum chassis / 2020 profile |
 | 1 | — | Silicone grease (annual maintenance) |
-| 1 | — | Verified aneroid manometer — Riester **Big Ben precision** (**±2 mmHg** tolerance) or equivalent (ERKA, Welch Allyn) |
+| 1 | **Riester 1456** (Big Ben **square**, desk) | Aneroid sphygmomanometer — **€120**: tempered **CuBe capsule** virtually free of ageing, **±2 mmHg** tolerance (0-300 mmHg), **600 mmHg** overload, **< 0.5 mmHg/yr** drift when mounted fixed (drift comes from shocks, not the capsule) |
 
 **Artificial arm**: 700c butyl inner tube cut to 1 m (~5 €); braided polyamide sleeve Ø 80-100 mm (Techflex F6, 1 m); *(optional)* 3 mm closed-cell EPDM foam; hose clamps + permanent marker.
 
@@ -230,7 +230,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 | 1 | — | 12 V / 2 A supply + **LM2596** buck |
 | 1 | — | 470 µF capacitor |
 
-**Standard traceability**: the ABP sensor must be **recalibrated by an accredited lab every ~2 years** (~80-120 €) — the only recurring operation, external, no component replacement. ABP family drift: < 0.5% FS/year.
+**Standard traceability**: ABP drift is checked **internally** by the **3 drift-separation steps** (§ 8 a: free-air zero, Boyle gain, 3-level crossover) — **no more recurring external recalibration**. ABP family drift: < 0.5 % FS/yr, detected before it can affect results.
 
 ---
 
@@ -240,7 +240,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 | --- | --- |
 | Mechanics | €60–85 |
 | Artificial arm | €15–25 |
-| Verified aneroid gauge (Riester Big Ben precision, ±2 mmHg) | €50–90 |
+| Riester 1456 Big Ben square aneroid sphygmomanometer (±2 mmHg, CuBe capsule) | €120 |
 | Electronics | €70–100 |
 | Pneumatics | €25–40 *(§ 3 f variant: +€80–90)* |
 | Initial ABP calibration | €80–120 (once) |
@@ -281,6 +281,13 @@ ESP32_Software/
 
 > **Automated variant (§ 3 f)**: every configuration below is applied automatically by the firmware (`valvesApply()`), and each valve passes an **isolation self-test** (`valveLeakTest()`, slope < 1 mmHg/min) before the session — manual approvals then cover only physical assembly (cuff, chuck, calibration syringe).
 
+**The 3 ABP/aneroid drift-separation steps** (built into the self-diagnostic in `CALIB`; they replace the recurring external recalibration):
+1. **Free-air zero** — purge (V6) open: the ABP reads its own offset (auto-captured in `S.zeroOffset`, an absolute measurement), the aneroid needle must sit in the zero oval. Each standard is judged on its own.
+2. **ABP gain via Boyle** — 10 mL injected at ~100 mmHg: expected ΔP = P·ΔV/(V_boyle−ΔV), a pure-physics prediction independent of both gauges (`S.gainErrPct`); deviation > 1.5 mmHg = electronic gain drift.
+3. **3-level crossover (50/100/150)** — deviation D(P) = aneroid − ABP: constant = offset, proportional to P = gain, non-linear or hysteresis = aneroid mechanism.
+
+Arbitration: steps 1-2 passing + crossover deviation → **aneroid at fault** (~€120 replacement); step 1 or 2 failing → **electronics** (software correction for a small offset, otherwise back to the lab); both OK while pressure creeps = **leak** (per-valve isolation test).
+
 Valve states — **S1**: ① PULSATION / ② PUMP / ③ 45°; **S2**: ① OPEN / ② CLOSED; **S3**: ① OPEN / ② CLOSED (arm isolation); **S4**: ① OPEN / ② CLOSED (check-valve isolation).
 
 1. **Assembly and pressurization**: arm on sleeve (markers aligned), chuck locked, **S3 ① OPEN**, **S1 ② PUMP**, **S4 ① OPEN**, S2 ② CLOSED. The motor pumps through the check valves (~60 mL/min), automatic stop at **P_int = 100 ± 2 mmHg**. Cross-check: S2 ① OPEN, aneroid reading logged. S2 ② CLOSED, **S1 ① PULSATION**.
@@ -312,6 +319,16 @@ Sessions 3-6 months apart, same temperature ±2 °C:
 **Interpretation**: a monotonic drift of the displayed mean with a stable stimulus and standard = **drift of the monitor + cuff assembly**. To attribute it, swap the cuff with a new identical one: if the drift follows the cuff → bladder; if it stays with the device → electronics/valve.
 
 ---
+### 8 d/ MQTT storage and measurement encryption
+
+- **Broker**: MQTT over **TLS 8883** (Mosquitto on a Raspberry/NAS, ~€0-50). The bench joins as STA in addition to its AP (`MQTT_STA_SSID` in `config.h`; `"CHANGE"` = module disabled, standalone bench).
+- **Calibration measurements**: published as JSON on `banc/tensiometre/calib` (zero, gain, leaks, V_boyle, levels, temperature, operator) — transport protected by TLS (pinned CA).
+- **Blood-pressure measurements**: payload **encrypted with AES-256-GCM** (key in NVS, random IV per message, base64 `IV:ciphertext:TAG`) on `banc/tensiometre/mesures` — TLS protects the transport, AES protects the message end to end.
+- **Patient**: asked **at test start** from a **predefined list** (`PATIENT_LIST` in `config.h`), served by `GET /api/patients`, mandatory selection in the web UI before the test.
+- **ESP32-S3 capacity**: 12 GPIO used of ~36 available (33%); flash ~1.2 MB of 8 MB; resident heap ~230 KB with TLS of ~320 KB, i.e. **> 30% memory margin** — validated, with 2 MB PSRAM in reserve.
+
+---
+
 
 ## 9. Limits and critical analysis
 

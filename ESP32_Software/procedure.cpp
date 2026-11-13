@@ -8,8 +8,9 @@ const Step CALIB[] = {
   {"Controle P_int",  "S2 (1) OUVERT, lire le manometre aneroide, saisir la valeur, S2 (2) FERME.", 'M'},
   {"Etancheite banc", "S3 (2) FERME : montee a 150 mmHg, pente 60 s (< 1 mmHg/min).", 'A'},
   {"Etancheite bras", "S1 (3) 45 degres + S3 (1) OUVERT : bras seul, pente 60 s (< 1 mmHg/min).", 'A'},
-  {"Linearite",       "Paliers 50/100/150 : a chaque palier S2 (1) OUVERT, saisir la lecture aneroide.", 'M'},
-  {"Volume (Boyle)",  "S1 (3) + S2 (1) + S3 (1) + S4 (2), seringue 10 mL sur le port S2 : injecter 10 mL, [VALIDER] (deltaP -> V), retirer la seringue, S2 (2) FERME.", 'M'},
+  {"Zero etalons",    "Purge (V6) OUVERTE : capture auto de l'offset electronique ABP ; verifier l'aiguille aneroide dans l'ovale zero. Fermer la purge.", 'A'},
+  {"Linearite",       "Paliers 50/100/150 : a chaque palier S2 (1) OUVERT, saisir la lecture aneroide. Signature D(P)=aneroide-ABP : constante=offset, proportionnelle=gain, non lineaire=mecanisme aneroide.", 'M'},
+  {"Volume+Gain (Boyle)", "S1 (3) + S2 (1) + S3 (1) + S4 (2), seringue 10 mL sur port S2 : injecter 10 mL, [VALIDER] (deltaP -> V et gain ABP : deltaP attendu = P*10/(V-10), ecart > 1,5 mmHg = derive electronique), retirer la seringue, S2 (2) FERME.", 'M'},
   {"Amplitude",       "S1 (1) PULSATION + S4 (2) FERME, moteur ON : lecture auto amplitude + forme sur 4 s. Ajuster la butee si hors cible.", 'A'},
 };
 const int N_CALIB = sizeof(CALIB) / sizeof(CALIB[0]);
@@ -77,7 +78,13 @@ void procedureRunAuto(int idx) {
           S.leakSlopeArm = S.pressure - p0;
         }
         break;
-      case 7:  // amplitude + forme sur 4 s de pulsation
+      case 5:  // zero a l'air libre : purge ouverte, capture de l'offset ABP (etape 1 du departage)
+        valveSet(true);                        // purge ouverte -> pression atmospherique
+        delay(3000);                           // stabilisation
+        S.zeroOffset = S.pressure;             // offset electronique direct (mmHg), mesure absolue
+        valveSet(false);                       // l'operateur verifie l'ovale zero de l'aneroide puis valide
+        break;
+      case 8:  // amplitude + forme sur 4 s de pulsation
         motorRun(true);
         delay(4000);
         motorRun(false);

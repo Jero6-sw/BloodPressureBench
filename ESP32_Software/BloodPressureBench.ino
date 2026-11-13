@@ -17,6 +17,7 @@
 #include "peripherals.h"
 #include "procedure.h"
 #include "web_server.h"
+#include "mqtt_link.h"
 
 void setup() {
   Serial.begin(115200);
@@ -54,4 +55,5 @@ void setup() {
 
 void loop() {
   server.handleClient();
+  mqttLoop();   // MQTT TLS : keepalive + reconnexion
 }

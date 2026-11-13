@@ -20,6 +20,8 @@ struct BenchState {
   float displayed[5] = {0, 0, 0, 0, 0}; // valeurs affichees par le tensiometre
   float tempC = 21;
   char  operatorName[32] = "", deviceSN[32] = "", fwDevice[24] = "";
+  float zeroOffset = 0, gainErrPct = 0;      // etapes de departage de derive (zero air libre, gain Boyle)
+  char  patientName[32] = "";               // patient selectionne en debut de test (liste predefinie config.h)
 };
 
 extern BenchState S;

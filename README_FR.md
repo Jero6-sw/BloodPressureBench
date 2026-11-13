@@ -2,7 +2,7 @@
 
 **Principe** : vérifier la dérive dans le temps de l'ensemble tensiomètre + brassard, en le soumettant à un stimulus mécanique **rigoureusement reproductible** — un « bras artificiel » dont les paramètres ne vieillissent pas. Un stimulus identique doit produire une réponse identique : toute variation dans le temps = dérive de l'ensemble sous test.
 
-**Exigences** : banc entièrement automatisé, fiable sur **10 ans minimum**, **sans remplacement de composants** (seule exception : recalibrage périodique du capteur de référence, opération externe).
+| Recalibrage étalon | 0 € — remplacé par le contrôle interne des 3 étapes de départage (§ 8 a) |
 
 ---
 
@@ -242,7 +242,7 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | 1 | — | Vis M4 + contre-écrou (butée réglable) |
 | 1 | — | Châssis alu percé / profilé 2020 + équerres |
 | 1 | — | Graisse silicone (maintenance annuelle) |
-| 1 | — | Manomètre anéroïde vérifié — Riester **Big Ben précision** (tolérance **±2 mmHg**) ou équivalent (ERKA, Welch Allyn) |
+| 1 | **Riester 1456** (Big Ben **carré**, table) | Tensiomètre anéroïde — **120 €** : capsule **CuBe trempé** quasi exempte de vieillissement, tolérance **±2 mmHg** (0-300 mmHg), surcharge **600 mmHg**, dérive **< 0,5 mmHg/an** monté fixe (cause de dérive = chocs, pas la capsule) |
 
 **Bras artificiel** : chambre à air **700c butyle** coupée à 1 m (~5 €) ; **gaine tressée polyamide Ø 80-100 mm** (Techflex F6, 1 m) ; *(option)* mousse **EPDM** 3 mm à cellules fermées ; colliers Serflex + feutre indélébile.
 
@@ -272,7 +272,7 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | 1 | — | Alimentation 12 V / 2 A + buck **LM2596** |
 | 1 | — | Condensateur 470 µF |
 
-**Traçabilité de l'étalon** : recalibrage du capteur ABP par un **laboratoire accrédité tous les ~2 ans** (~80-120 €) — la seule opération récurrente, externe, sans remplacement de composant. Dérive propre de la famille ABP : < 0,5 % FS/an.
+**Traçabilité de l'étalon** : dérive ABP contrôlée **en interne** par les **3 étapes de départage** (§ 8 a : zéro à l'air libre, gain par Boyle, croisement 3 paliers) — **plus de recalibrage externe récurrent**. Dérive propre de la famille ABP : < 0,5 % FS/an, détectée avant tout impact sur les résultats.
 
 ---
 
@@ -282,7 +282,7 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | --- | --- |
 | Mécanique | 60–85 € |
 | Bras artificiel | 15–25 € |
-| Manomètre anéroïde vérifié (Riester Big Ben précision, ±2 mmHg) | €50–90 |
+| Tensiomètre anéroïde Riester 1456 Big Ben carré (±2 mmHg, capsule CuBe) | 120 € |
 | Électronique | 70–100 € |
 | Pneumatique | 25–40 € *(variante § 3 f : +80–90 €)* |
 | Étalonnage initial ABP | 80–120 € (une fois) |
@@ -323,6 +323,13 @@ ESP32_Software/
 
 > **Variante automatisée (§ 3 f)** : toutes les configurations ci-dessous sont appliquées automatiquement par le firmware (`valvesApply()`), et chaque vanne passe un **auto-test d'isolement** (`valveLeakTest()`, pente < 1 mmHg/min) avant la session — les approbations manuelles ne concernent plus que le montage physique (brassard, chuck, seringue de calibration).
 
+**Les 3 étapes de départage de dérive ABP/anéroïde** (intégrées à l'auto-diagnostic dans `CALIB` ; elles remplacent le recalibrage externe récurrent) :
+1. **Zéro à l'air libre** — purge (V6) ouverte : l'ABP lit directement son offset (capture auto `S.zeroOffset`, mesure absolue), l'aiguille anéroïde doit rester dans l'ovale zéro. Chaque étalon est jugé seul.
+2. **Gain ABP par Boyle** — injection de 10 mL à ~100 mmHg : ΔP attendu = P·ΔV/(V_boyle−ΔV), prédiction de physique pure indépendante des deux manomètres (`S.gainErrPct`) ; écart > 1,5 mmHg = dérive de gain électronique.
+3. **Croisement 3 paliers (50/100/150)** — écart D(P) = anéroïde − ABP : constant = offset, proportionnel à P = gain, non linéaire ou hystérésis = mécanisme anéroïde.
+
+Arbitrage : étapes 1-2 validées + écart croisé → **anéroïde en cause** (remplacement ~120 €) ; étape 1 ou 2 KO → **électronique** (correction logicielle si offset faible, sinon retour labo) ; les deux OK et pression qui bouge = **fuite** (test d'isolement par vanne).
+
 États des robinets — **S1** : ① PULSATION / ② POMPE / ③ 45° ; **S2** : ① OUVERT / ② FERMÉ ; **S3** : ① OUVERT / ② FERMÉ (isolement du bras) ; **S4** : ① OUVERT / ② FERMÉ (isolement des clapets).
 
 1. **Montage et mise en pression** : bras sur filet (repères alignés), chuck verrouillé, **S3 ① OUVERT**, **S1 ② POMPE**, **S4 ① OUVERT**, S2 ② FERMÉ. Le moteur pompe via les clapets (~60 mL/min), arrêt automatique à **P_int = 100 ± 2 mmHg**. Contrôle croisé : S2 ① OUVERT, lecture anéroïde consignée. S2 ② FERMÉ, **S1 ① PULSATION**.
@@ -354,6 +361,16 @@ Sessions espacées de 3 à 6 mois, même température ±2 °C :
 **Interprétation** : une dérive monotone de la moyenne affichée avec un stimulus et un étalon stables = **dérive de l'ensemble tensiomètre + brassard**. Pour l'attribuer, permuter le brassard avec un brassard neuf identique : si la dérive suit le brassard → vessie ; si elle reste sur l'appareil → électronique/valve.
 
 ---
+### 8 d/ Stockage MQTT et chiffrement des mesures
+
+- **Broker** : MQTT sur **TLS 8883** (Mosquitto sur Raspberry/NAS, ~0-50 €). Le banc se connecte en STA en plus de son AP (`MQTT_STA_SSID` dans `config.h` ; `"CHANGE"` = module désactivé, banc autonome).
+- **Mesures d'étalonnage** : publiées en JSON sur `banc/tensiometre/calib` (zéro, gain, fuites, V_boyle, paliers, température, opérateur) — transport protégé par TLS (CA épinglé).
+- **Mesures de tension** : payload **chiffré AES-256-GCM** (clé en NVS, IV aléatoire par message, base64 `IV:chiffré:TAG`) sur `banc/tensiometre/mesures` — le TLS protège le transport, l'AES protège le message de bout en bout.
+- **Patient** : demandé **en début de test** via une **liste prédéfinie** (`PATIENT_LIST` dans `config.h`), servie par `GET /api/patients`, sélection obligatoire dans l'interface web avant le test.
+- **Capacité ESP32-S3** : 12 GPIO utilisés sur ~36 disponibles (33 %) ; flash ~1,2 Mo sur 8 Mo ; heap résident ~230 Ko avec TLS sur ~320 Ko, soit **> 30 % de marge mémoire** — validé, avec 2 Mo de PSRAM en réserve.
+
+---
+
 
 ## 9. Limites et analyse critique
 

@@ -2,6 +2,7 @@
 #include "config.h"
 #include "peripherals.h"
 #include "procedure.h"
+#include "mqtt_link.h"
 
 #include <WiFi.h>
 #include <WebServer.h>
@@ -37,10 +38,15 @@ void handleValue() {
   if      (!strcmp(k, "mano"))    S.pReads[d["idx"] | 0] = v;
   else if (!strcmp(k, "display")) S.displayed[d["idx"] | 0] = v;
   else if (!strcmp(k, "temp"))    S.tempC = v;
-  else if (!strcmp(k, "boyle"))   S.boyleV = (760.0f + S.pressure) * 10.0f / (v != 0 ? v : 1);  // V = P_abs * dV / dP
+  else if (!strcmp(k, "boyle")) {
+    S.boyleV = (760.0f + S.pressure) * 10.0f / (v != 0 ? v : 1);       // V = P_abs * dV / dP
+    float dPexp = (760.0f + S.pressure) * 10.0f / (S.boyleV - 10.0f);  // etape 2 departage : gain attendu
+    S.gainErrPct = (dPexp > 0.1f) ? (v - dPexp) / dPexp * 100.0f : 0;   // > ~1,5 mmHg a 100 mmHg => derive electronique
+  }
   else if (!strcmp(k, "operator"))strlcpy(S.operatorName, d["value"] | "", sizeof(S.operatorName));
   else if (!strcmp(k, "sn"))      strlcpy(S.deviceSN, d["value"] | "", sizeof(S.deviceSN));
   else if (!strcmp(k, "fwdev"))   strlcpy(S.fwDevice, d["value"] | "", sizeof(S.fwDevice));
+  else if (!strcmp(k, "patient")) strlcpy(S.patientName, d["value"] | "", sizeof(S.patientName));
   server.send(200, "application/json", "{}");
 }
 
@@ -60,6 +66,9 @@ void handleReport() {
   d["operator"] = S.operatorName;
   d["deviceSN"] = S.deviceSN;
   d["fwDevice"] = S.fwDevice;
+  d["zeroOffset"] = S.zeroOffset;
+  d["gainErrPct"] = S.gainErrPct;
+  d["patient"] = S.patientName;
   String o;
   serializeJson(d, o);
   server.send(200, "application/json", o);
@@ -79,12 +88,34 @@ void handleApprove() {
   server.send(200, "application/json", "{}");
 }
 
+// ---------- GET /api/patients : liste predefinie (config.h PATIENT_LIST) ----------
+void handlePatients() {
+  StaticJsonDocument<1024> d;
+  JsonArray a = d.createNestedArray("patients");
+  char buf[sizeof(PATIENT_LIST)];
+  strlcpy(buf, PATIENT_LIST, sizeof(buf));
+  for (char* p = strtok(buf, "\n"); p; p = strtok(nullptr, "\n")) a.add(p);
+  String o; serializeJson(d, o);
+  server.send(200, "application/json", o);
+}
+
+// ---------- POST /api/publish : publication MQTT (etalonnage + mesures chiffrees) ----------
+void handlePublish() {
+  bool c = mqttPublishCalib();
+  bool m = mqttPublishMeasures();
+  String r = "{\"calib\":" + String(c ? "true" : "false") + ",\"mesures\":" + String(m ? "true" : "false") + "}";
+  server.send(200, "application/json", r);
+}
+
 void setupServer() {
+  mqttSetup();
   server.on("/api/status",  HTTP_GET,  sendJson);
   server.on("/api/report",  HTTP_GET,  handleReport);
   server.on("/api/start",   HTTP_POST, handleStart);
   server.on("/api/approve", HTTP_POST, handleApprove);
   server.on("/api/value",   HTTP_POST, handleValue);
+  server.on("/api/patients", HTTP_GET,  handlePatients);
+  server.on("/api/publish",  HTTP_POST, handlePublish);
   server.serveStatic("/", LittleFS, "/www/");   // page web + jsPDF stockes en flash
   server.begin();
 }
