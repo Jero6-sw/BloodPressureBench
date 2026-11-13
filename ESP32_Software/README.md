@@ -1,6 +1,6 @@
 # ESP32_Software — firmware du banc
 
-Firmware du serveur embarqué du banc (ESP32-S3-DevKitC-1-N8R2, Arduino IDE ou PlatformIO).
+Firmware du serveur embarqué du banc (**ESP32-WROOM-32**, DevKit v1 — brochage remappé : GPIO 6-11 interdits = flash interne, 34-39 entrée seule ; Arduino IDE ou PlatformIO).
 
 ## Structure — séparation par fonction
 
@@ -38,7 +38,7 @@ La page et jsPDF sont stockés dans la partition **LittleFS** de l'ESP32 :
 
 ## Variante électrovannes
 
-Les brochages des 7 vannes sont définis dans `config.h` : `PIN_V0`=GPIO15, `PIN_V1`=GPIO16, `PIN_V2`=GPIO17, `PIN_V3`=GPIO18, `PIN_V4`=GPIO19, `PIN_V5`=GPIO21, `PIN_V6`=GPIO7 (purge) — GPIO → ULN2803 → bobines 12 V.
+Les brochages des 7 vannes sont définis dans `config.h` : `PIN_V0`=GPIO13, `PIN_V1`=GPIO14, `PIN_V2`=GPIO16, `PIN_V3`=GPIO17, `PIN_V4`=GPIO18, `PIN_V5`=GPIO32, `PIN_V6`=GPIO33 (purge) — GPIO → ULN2803 → bobines 12 V.
 
 ## Notes de production
 
@@ -50,8 +50,8 @@ Les brochages des 7 vannes sont définis dans `config.h` : `PIN_V0`=GPIO15, `PIN
 
 Intégrées dans la séquence `CALIB` : **zéro à l'air libre** (capture `S.zeroOffset`, purge V6), **gain ABP par Boyle** (`S.gainErrPct` = ΔP mesuré vs ΔP attendu à l'injection de 10 mL), **croisement 3 paliers** (saisie anéroïde 50/100/150, signature offset/gain/non-linéarité). Elles remplacent le recalibrage externe récurrent — voir README_FR § 8 a.
 
-## Capacité ESP32-S3 (marge ≥ 30 %)
+## Capacité ESP32-WROOM-32 (marge ~20 %, acceptée)
 
-- **GPIO** : 12 utilisés (I2C ×2, moteur ×3, vannes ×7) sur ~36 disponibles du DevKitC-1 → 33 %.
-- **Flash** : ~1,2 Mo utilisés (WiFi + TLS + WebServer + PubSubClient + LittleFS/www) sur 8 Mo → 15 %.
-- **RAM** : heap résident ~230 Ko avec TLS actif sur ~320 Ko disponibles → **marge ~28-35 %**, validée ≥ 30 % ; 2 Mo de PSRAM en réserve pour la mise en tampon des mesures.
+- **GPIO** : 12 utilisés (I2C ×2, moteur ×3, vannes ×7) ; WROOM-32 : GPIO **6-11 interdits** (flash interne), 34-39 entrée seule, strapping évité (0/2/12/15) → ~25 sorties disponibles.
+- **Flash** : ~1,2 Mo utilisés (WiFi + TLS + WebServer + PubSubClient + LittleFS/www) sur **4 Mo** → ~70 % libres.
+- **RAM** : heap résident ~230 Ko avec TLS actif sur ~290 Ko disponibles → **marge ~20-25 %, acceptée** ; sans PSRAM, tampon des mesures sur LittleFS. Pour tenir la marge : CA TLS **épinglé** (pas de bundle complet) + buffer TLS réduit à 4 Ko.

@@ -198,26 +198,26 @@ La configuration de stockage « tout fermé » devient l'état par défaut à la
 ![Câblage](docs/wiring.svg)
 
 ```
-Capteur ABP (I2C, 3,3 V)        ESP32-S3
+Capteur ABP (I2C, 3,3 V)        ESP32-WROOM-32
   VCC ────────── 3V3
   GND ────────── GND
-  SDA ──[4,7k à 3V3]── GPIO8
-  SCL ──[4,7k à 3V3]── GPIO9
+  SDA ──[4,7k à 3V3]── GPIO21
+  SCL ──[4,7k à 3V3]── GPIO22
 
 TMC2209 (stepper)
   STEP ────────── GPIO4
   DIR  ────────── GPIO5
-  EN   ────────── GPIO6 (actif bas)
+  EN   ────────── GPIO23 (actif bas)
   VMOT ────────── +12 V | GND ─ masse commune | VDD ─ 3V3
   Microstepping 1/16
 
 Électrovanne 12 V
-  GPIO7 ── R 1 kΩ ── base TIP120 ; émetteur GND ; collecteur → vanne
+  GPIO33 ── R 1 kΩ ── base TIP120 ; émetteur GND ; collecteur → vanne
   autre borne vanne → +12 V ; diode 1N4007 inversée aux bornes
 
 Variante automatisée — 7 électrovannes (SMC VT307V-6G1-01, 12 V) pilotées en GPIO via ULN2803 :
-  V0 = GPIO15   V1 = GPIO16   V2 = GPIO17   V3 = GPIO18
-  V4 = GPIO19   V5 = GPIO21   V6 = GPIO7 (purge)
+  V0 = GPIO13   V1 = GPIO14   V2 = GPIO16   V3 = GPIO17
+  V4 = GPIO18   V5 = GPIO32   V6 = GPIO33 (purge)
   GPIO ── R 1 kΩ ── IN1..IN7 du ULN2803 ; OUT1..OUT7 → borne basse de chaque vanne
   autre borne vanne → +12 V ; broche COM du ULN2803 → +12 V (diodes de roue libre internes)
   Brochages définis dans config.h (PIN_V0 … PIN_V6) — l'inversion logique NC/NO est dans valves.cpp
@@ -266,7 +266,7 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | Qté | Référence | Désignation |
 | --- | --- | --- |
 | 1 | **ABPDRRV040MG2A3** | Capteur Honeywell ABP 0–40 kPa (0–300 mmHg), I2C, ±0,25 % FS — **l'étalon du banc** |
-| 1 | **ESP32-S3-DevKitC-1-N8R2** | MCU 3,3 V natif, WiFi |
+| 1 | **ESP32-WROOM-32** (DevKit v1, 4 Mo) | MCU 3,3 V natif, WiFi — brochage remappé (§ 4) |
 | 2 | — | Résistances 4,7 kΩ (pull-up I2C) |
 | 1 | — | **TIP120** + 1 kΩ + **1N4007** (commande vanne) |
 | 1 | — | Alimentation 12 V / 2 A + buck **LM2596** |
@@ -367,7 +367,7 @@ Sessions espacées de 3 à 6 mois, même température ±2 °C :
 - **Mesures d'étalonnage** : publiées en JSON sur `banc/tensiometre/calib` (zéro, gain, fuites, V_boyle, paliers, température, opérateur) — transport protégé par TLS (CA épinglé).
 - **Mesures de tension** : payload **chiffré AES-256-GCM** (clé en NVS, IV aléatoire par message, base64 `IV:chiffré:TAG`) sur `banc/tensiometre/mesures` — le TLS protège le transport, l'AES protège le message de bout en bout.
 - **Patient** : demandé **en début de test** via une **liste prédéfinie** (`PATIENT_LIST` dans `config.h`), servie par `GET /api/patients`, sélection obligatoire dans l'interface web avant le test.
-- **Capacité ESP32-S3** : 12 GPIO utilisés sur ~36 disponibles (33 %) ; flash ~1,2 Mo sur 8 Mo ; heap résident ~230 Ko avec TLS sur ~320 Ko, soit **> 30 % de marge mémoire** — validé, avec 2 Mo de PSRAM en réserve.
+- **Capacité ESP32-WROOM-32** : 12 GPIO utilisés (~25 disponibles : GPIO 6-11 interdits = flash interne, 34-39 entrée seule, strapping évité) ; flash ~1,2 Mo sur 4 Mo ; heap résident ~230 Ko avec TLS sur ~290 Ko, soit **~20 % de marge mémoire** (acceptée) ; sans PSRAM — tampon des mesures sur LittleFS.
 
 ---
 

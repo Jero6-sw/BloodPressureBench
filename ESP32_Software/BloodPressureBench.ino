@@ -1,6 +1,6 @@
 /*
  * Banc de test - derive d'un ensemble tensiometre + brassard
- * Firmware ESP32-S3 - voir README_FR.md / README_EN.md a la racine du depot.
+ * Firmware ESP32-WROOM-32 - voir README_FR.md / README_EN.md a la racine du depot.
  *
  * Modules :
  *   config.h        brochage, constantes, identifiants WiFi

@@ -156,26 +156,26 @@ The "all closed" storage configuration becomes the default state on power loss. 
 ![Wiring](docs/wiring.svg)
 
 ```
-ABP sensor (I2C, 3.3 V)         ESP32-S3
+ABP sensor (I2C, 3.3 V)         ESP32-WROOM-32
   VCC ────────── 3V3
   GND ────────── GND
-  SDA ──[4.7k to 3V3]── GPIO8
-  SCL ──[4.7k to 3V3]── GPIO9
+  SDA ──[4.7k to 3V3]── GPIO21
+  SCL ──[4.7k to 3V3]── GPIO22
 
 TMC2209 (stepper)
   STEP ────────── GPIO4
   DIR  ────────── GPIO5
-  EN   ────────── GPIO6 (active low)
+  EN   ────────── GPIO23 (active low)
   VMOT ────────── +12 V | GND ─ common ground | VDD ─ 3V3
   Microstepping 1/16
 
 12 V solenoid valve
-  GPIO7 ── R 1 kΩ ── TIP120 base ; emitter GND ; collector → valve
+  GPIO33 ── R 1 kΩ ── TIP120 base ; emitter GND ; collector → valve
   other valve terminal → +12 V ; 1N4007 flyback diode
 
 Automated variant — 7 solenoid valves (SMC VT307V-6G1-01, 12 V) GPIO-driven through a ULN2803:
-  V0 = GPIO15   V1 = GPIO16   V2 = GPIO17   V3 = GPIO18
-  V4 = GPIO19   V5 = GPIO21   V6 = GPIO7 (purge)
+  V0 = GPIO13   V1 = GPIO14   V2 = GPIO16   V3 = GPIO17
+  V4 = GPIO18   V5 = GPIO32   V6 = GPIO33 (purge)
   GPIO ── 1 kΩ ── ULN2803 IN1..IN7; OUT1..OUT7 → low terminal of each valve
   other valve terminal → +12 V; ULN2803 COM pin → +12 V (internal flyback diodes)
   Pin assignments live in config.h (PIN_V0 … PIN_V6) — the NC/NO logic inversion sits in valves.cpp
@@ -224,7 +224,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 | Qty | Part | Description |
 | --- | --- | --- |
 | 1 | **ABPDRRV040MG2A3** | Honeywell ABP 0–40 kPa (0–300 mmHg), I2C, ±0.25% FS — **the bench standard** |
-| 1 | **ESP32-S3-DevKitC-1-N8R2** | Native 3.3 V MCU, WiFi |
+| 1 | **ESP32-WROOM-32** (DevKit v1, 4 MB) | Native 3.3 V MCU, WiFi — remapped pinout (§ 4) |
 | 2 | — | 4.7 kΩ resistors (I2C pull-ups) |
 | 1 | — | **TIP120** + 1 kΩ + **1N4007** (valve drive) |
 | 1 | — | 12 V / 2 A supply + **LM2596** buck |
@@ -325,7 +325,7 @@ Sessions 3-6 months apart, same temperature ±2 °C:
 - **Calibration measurements**: published as JSON on `banc/tensiometre/calib` (zero, gain, leaks, V_boyle, levels, temperature, operator) — transport protected by TLS (pinned CA).
 - **Blood-pressure measurements**: payload **encrypted with AES-256-GCM** (key in NVS, random IV per message, base64 `IV:ciphertext:TAG`) on `banc/tensiometre/mesures` — TLS protects the transport, AES protects the message end to end.
 - **Patient**: asked **at test start** from a **predefined list** (`PATIENT_LIST` in `config.h`), served by `GET /api/patients`, mandatory selection in the web UI before the test.
-- **ESP32-S3 capacity**: 12 GPIO used of ~36 available (33%); flash ~1.2 MB of 8 MB; resident heap ~230 KB with TLS of ~320 KB, i.e. **> 30% memory margin** — validated, with 2 MB PSRAM in reserve.
+- **ESP32-WROOM-32 capacity**: 12 GPIO used (~25 available: GPIO 6-11 forbidden = internal flash, 34-39 input-only, strapping avoided); flash ~1.2 MB of 4 MB; resident heap ~230 KB with TLS of ~290 KB, i.e. **~20% memory margin** (accepted); no PSRAM — measurement buffering on LittleFS.
 
 ---
 
