@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 // ---------- Identification ----------
-#define FW_VERSION   "1.0.0-banc"
+#define FW_VERSION   "1.1.0-banc"
 
 // ---------- Capteur ABP (Honeywell ABPDRRV040MG2A3, 0-40 kPa, I2C) ----------
 #define ABP_ADDR     0x28
@@ -15,7 +15,19 @@
 #define PIN_STEP     4
 #define PIN_DIR      5
 #define PIN_EN       6              // actif bas (TMC2209)
-#define PIN_VALVE    7              // TIP120 -> electrovanne 12 V
+#define PIN_VALVE    7              // vanne de purge (V6)
+
+// ---------- Electrovannes 2/2 (variante automatisee, voir docs/automatisation-electrovannes.md) ----------
+// Vannes DIRECT-ACTIONNEES des 0 bar obligatoire (circuit a 0,04 MPa max).
+// Series validees : 2V025-06 / 2V130-15, ou SMC VT307. Pilotage TIP120 ou ULN2803.
+// NO = normalement ouverte (energisee = fermee) ; NC = normalement fermee.
+#define PIN_V0       15   // V0 (S1 serie, NO)      : fermee = confinement (S1 45 deg)
+#define PIN_V1       16   // V1 (PULSATION, NO)     : ouverte = seringue <-> M (mesure)
+#define PIN_V2       17   // V2 (POMPE, NC)         : ouverte = seringue <-> branche clapets
+#define PIN_V3       18   // V3 (S2 manometre, NC)  : ouverte = lectures croisees
+#define PIN_V4       19   // V4 (S3 isolement bras, NC) : ouverte = bras <-> banc
+#define PIN_V5       21   // V5 (S4 isolement clapets, NO) : ouverte = ligne CV2 <-> M (pompe)
+#define PIN_V6       7    // V6 (purge atmo, NC)    : ouverte = degonflage
 
 // ---------- Consignes pneumatiques ----------
 #define P_TARGET_MMHG      100.0f   // P_int de session
