@@ -2,7 +2,7 @@
 
 **Principle**: check the drift over time of the monitor + cuff assembly by submitting it to a **rigorously reproducible** mechanical stimulus — an artificial "arm" whose parameters do not age. An identical stimulus must produce an identical response: any variation over time = drift of the assembly under test.
 
-| Standard recalibration | €0 — replaced by the internal 3-step drift check (§ 8 a) |
+**Requirements**: fully automated bench, reliable for **10+ years**, **with no component replacement and no recurring external recalibration** — standard drift is checked internally by the 3 drift-separation steps (§ 8 a).
 
 > The diagrams in `docs/` are labeled in French; the tables and text below are complete in English.
 
@@ -244,7 +244,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 | Electronics | €70–100 |
 | Pneumatics | €25–40 *(§ 3 f variant: +€80–90)* |
 | Initial ABP calibration | €80–120 (once) |
-| ABP recalibration every 2 years | €40–60 / operation |
+| Standard recalibration | €0 — replaced by the internal 3-step drift check (§ 8 a) |
 | **Total investment** | **≈ €300–460** *(≈ €380–550 with the § 3 f automated variant)* |
 
 ---
@@ -334,7 +334,7 @@ Sessions 3-6 months apart, same temperature ±2 °C:
 
 1. **A single "patient"**: one nominal point (100 mmHg, 60 bpm, one amplitude). We look for drift, not the complete error map. Possible extension: a second tube sealed at 120 mmHg ("hypertensive patient").
 2. **Mechanical coupling not computable**: everything is protocolized to make the transmission *constant*, but it is *unknown in absolute value* — the bench measures relative evolutions, never absolute accuracy.
-3. **The standard drifts too**: mitigations = accredited recalibration every 2 years + cross-control chart with the aneroid gauge (two independent standards watching each other).
+3. **The standard drifts too**: mitigations = **3 internal drift-separation steps** (free-air zero, Boyle gain, 3-level crossover — § 8 a) + cross-control chart with the aneroid gauge (two independent standards watching each other); lab recalibration now exceptional (on alert only).
 4. **Butyl still ages, slowly**: stored at 0 mmHg it lasts well beyond 10 years; the leak test detects any micro-leak; visual inspection at every session (cracks on the folds).
 5. **Check valves = the only soft active parts**: doubly isolated during measurement (S1 + S4), their drift only affects inflation speed.
 6. **Thermal sensitivity**: ~0.4 mmHg/°C during a session — temperature logged, ±3 °C range vs the reference session.

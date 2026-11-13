@@ -2,7 +2,7 @@
 
 **Principe** : vérifier la dérive dans le temps de l'ensemble tensiomètre + brassard, en le soumettant à un stimulus mécanique **rigoureusement reproductible** — un « bras artificiel » dont les paramètres ne vieillissent pas. Un stimulus identique doit produire une réponse identique : toute variation dans le temps = dérive de l'ensemble sous test.
 
-| Recalibrage étalon | 0 € — remplacé par le contrôle interne des 3 étapes de départage (§ 8 a) |
+**Exigences** : banc entièrement automatisé, fiable sur **10 ans minimum**, **sans remplacement de composants ni recalibrage externe récurrent** — la dérive des étalons est contrôlée en interne par les 3 étapes de départage (§ 8 a).
 
 ---
 
@@ -286,7 +286,7 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 | Électronique | 70–100 € |
 | Pneumatique | 25–40 € *(variante § 3 f : +80–90 €)* |
 | Étalonnage initial ABP | 80–120 € (une fois) |
-| Recalibrage ABP tous les 2 ans | 40–60 € / opération |
+| Recalibrage étalon | 0 € — remplacé par le contrôle interne des 3 étapes de départage (§ 8 a) |
 | **Total investissement** | **≈ 300–460 €** *(≈ 380–550 € avec la variante automatisée § 3 f)* |
 
 ---
@@ -376,7 +376,7 @@ Sessions espacées de 3 à 6 mois, même température ±2 °C :
 
 1. **Un seul « patient »** : un point nominal (100 mmHg, 60 bpm, une amplitude). On cherche la dérive, pas la carte d'erreur complète. Extension possible : deuxième tube scellé à 120 mmHg (« patient hypertendu »).
 2. **Couplage mécanique non calculable** : tout est protocoleisé pour rendre la transmission *constante*, mais elle est *inconnue en valeur absolue* — le banc mesure des évolutions relatives, jamais une justesse absolue.
-3. **L'étalon dérive aussi** : mitigations = recalibrage accrédité tous les 2 ans + carte de contrôle croisée avec le manomètre anéroïde (deux étalons indépendants qui se surveillent mutuellement).
+3. **L'étalon dérive aussi** : mitigations = **3 étapes de départage internes** (zéro à l'air libre, gain Boyle, croisement 3 paliers — § 8 a) + carte de contrôle croisée avec le manomètre anéroïde (deux étalons indépendants qui se surveillent mutuellement) ; recalibrage labo devenu exceptionnel (sur alerte uniquement).
 4. **Le butyle vieillit lentement** : stocké à 0 mmHg, il dure très largement 10 ans ; le test d'étanchéité détecte toute micro-fuite ; inspection visuelle à chaque session (craquelures sur les plis).
 5. **Clapets = seules pièces souples actives** : doublement isolés en mesure (S1 + S4), leur dérive n'affecte que la vitesse de gonflage.
 6. **Sensibilité thermique** : ~0,4 mmHg/°C pendant la session — température consignée, plage ±3 °C vs session de référence.
