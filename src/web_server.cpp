@@ -1,6 +1,7 @@
 
 
 
+
 #include "web_server.h"
 #include "config.h"
 #include "peripherals.h"
@@ -172,6 +173,21 @@ void setupServer() {
   BPB_WebServer.on("/api/mqtt",    HTTP_POST, handleMqttConfig);    // NVS : broker + CA TLS + cle AES
   BPB_WebServer.on("/api/config",  HTTP_GET,  handleGetConfig);     // NVS : lecture (sans secrets)
   BPB_WebServer.on("/api/reset",   HTTP_POST, handleResetConfig);   // NVS : effacement -> AP
-  BPB_WebServer.serveStatic("/", LittleFS, "/www/");   // page web + jsPDF stockes en flash
+  // Racine explicite : serveStatic ne sert par defaut que "index.htm" a la
+  // racine (et notre fichier s'appelle index.html) -> handler dedie, avec
+  // diagnostic clair si la partition LittleFS n'a pas ete flashee.
+  BPB_WebServer.on("/", HTTP_GET, []() {
+    if (!LittleFS.exists("/www/index.html")) {
+      BPB_WebServer.send(500, "text/plain",
+        "Interface web absente : flasher src/www/ dans la partition LittleFS "
+        "(Arduino IDE : outil 'ESP32 Sketch Data Upload' ; PlatformIO : pio run -t uploadfs)");
+      return;
+    }
+    File f = LittleFS.open("/www/index.html", "r");
+    BPB_WebServer.sendHeader("Cache-Control", "no-store");
+    BPB_WebServer.streamFile(f, "text/html");
+    f.close();
+  });
+  BPB_WebServer.serveStatic("/www/", LittleFS, "/www/");   // assets : report.js, jsPDF
   BPB_WebServer.begin();
 }

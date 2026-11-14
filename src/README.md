@@ -1,4 +1,5 @@
 
+
 # ESP32_Software — firmware du banc
 
 Firmware du serveur embarqué du banc (**ESP32-WROOM-32**, DevKit v1 — brochage remappé : GPIO 6-11 interdits = flash interne, 34-39 entrée seule ; Arduino IDE ou PlatformIO).
@@ -30,6 +31,7 @@ La page et jsPDF sont stockés dans la partition **LittleFS** de l'ESP32 :
 1. Télécharger `jspdf.umd.min.js` (licence MIT, ~110 Ko) et le placer dans `ESP32_Software/www/` ;
 2. Ouvrir le dossier `www/` comme **data** dans l'outil "ESP32 Sketch Data Upload" (Arduino IDE) ou `pio run -t uploadfs` (PlatformIO) ;
 3. La page fonctionne ensuite **hors Internet** : aucune donnée ne quitte le réseau local.
+4. **Si `http://192.168.4.1` répond « Not found: / » ou « Interface web absente »** : la partition LittleFS n'est pas flashée — relancer l'étape 2. (La racine est servie explicitement vers `/www/index.html` : le `serveStatic` générique ne connaît par défaut que `index.htm`.)
 
 ## Utilisation
 
