@@ -59,7 +59,7 @@
 // Pas de reseau configure en NVS => MQTT inactif.
 #define MQTT_PORT      8883              // TLS obligatoire
 #define MQTT_TOPIC     "banc/tensiometre"
-#define MQTT_HOST      "192.168.1.10"    // repli : broker (Mosquitto sur Raspberry/NAS)
+#define MQTT_HOST      "192.168.8.50"    // repli : broker (Mosquitto sur Raspberry/NAS)
 #define MQTT_CA_CERT   ""                // repli : PEM du CA du broker
 #define MQTT_AES_KEY   "CHANGEZ_MOI_cle_32_octets________"   // repli : cle AES-256
 // Liste predefinie des patients (un nom par ligne) - demandee en debut de test.
