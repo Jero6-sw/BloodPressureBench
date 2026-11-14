@@ -1,5 +1,6 @@
 
 
+
 #include "peripherals.h"
 #include "config.h"
 #include <Wire.h>
@@ -47,7 +48,9 @@ void acquisitionTask(void*) {
     unsigned long ms = millis();
     if (ms - lastLog >= ACQ_PERIOD_MS) {          // 100 Hz
       lastLog = ms;
-      float p = readPressureMMHg();
+      // Capteur absent -> pas de lecture I2C : evite le flot d'erreurs
+      // "i2c.master: I2C software timeout" a 100 Hz dans le moniteur/plotter.
+      float p = BPB_BenchState.abpOk ? readPressureMMHg() : BPB_BenchState.pressure;
       BPB_BenchState.pressure = p;
       if (p < pMin) { pMin = p; tMin = ms; }
       if (p > pMax) { pMax = p; tMax = ms; }

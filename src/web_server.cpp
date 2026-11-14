@@ -2,6 +2,7 @@
 
 
 
+
 #include "web_server.h"
 #include "config.h"
 #include "peripherals.h"
@@ -177,16 +178,20 @@ void setupServer() {
   // racine (et notre fichier s'appelle index.html) -> handler dedie, avec
   // diagnostic clair si la partition LittleFS n'a pas ete flashee.
   BPB_WebServer.on("/", HTTP_GET, []() {
-    if (!LittleFS.exists("/www/index.html")) {
-      BPB_WebServer.send(500, "text/plain",
-        "Interface web absente : flasher src/www/ dans la partition LittleFS "
-        "(Arduino IDE : outil 'ESP32 Sketch Data Upload' ; PlatformIO : pio run -t uploadfs)");
-      return;
+    // Tolerant : accepte /www/index.html (data/www/) ou /index.html (data/ a plat)
+    const char* candidates[] = { "/www/index.html", "/index.html" };
+    for (const char* path : candidates) {
+      if (LittleFS.exists(path)) {
+        File f = LittleFS.open(path, "r");
+        BPB_WebServer.sendHeader("Cache-Control", "no-store");
+        BPB_WebServer.streamFile(f, "text/html");
+        f.close();
+        return;
+      }
     }
-    File f = LittleFS.open("/www/index.html", "r");
-    BPB_WebServer.sendHeader("Cache-Control", "no-store");
-    BPB_WebServer.streamFile(f, "text/html");
-    f.close();
+    BPB_WebServer.send(500, "text/plain",
+      "Interface web absente : flasher src/www/ dans la partition LittleFS "
+      "(Arduino IDE : outil 'ESP32 Sketch Data Upload' ; PlatformIO : pio run -t uploadfs)");
   });
   BPB_WebServer.serveStatic("/www/", LittleFS, "/www/");   // assets : report.js, jsPDF
   BPB_WebServer.begin();

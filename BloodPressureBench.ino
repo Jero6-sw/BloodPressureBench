@@ -1,5 +1,6 @@
 
 
+
 /*
  * Banc de test - derive d'un ensemble tensiometre + brassard
  * Firmware ESP32-WROOM-32 - voir README_FR.md / README_EN.md a la racine du depot.
@@ -16,6 +17,7 @@
 #include <Wire.h>
 #include <LittleFS.h>
 #include <WiFi.h>
+#include "esp_log.h"
 
 #include "src/config.h"
 #include "src/peripherals.h"
@@ -42,6 +44,11 @@ static void manageNetwork() {
 void setup() {
   Serial.begin(115200);
   Wire.begin(PIN_SDA, PIN_SCL);
+
+  // Silence le composant i2c.master du framework (erreurs repetees a chaque
+  // timeout). ATTENTION : masque AUSSI les defaillances reelles du capteur ->
+  // l'etat du capteur reste visible via S.abpOk (interface web + journal [BANC]).
+  esp_log_level_set("i2c.master", ESP_LOG_NONE);
 
   // Sorties actionneurs - etat de securite au demarrage
   pinMode(PIN_STEP, OUTPUT);
