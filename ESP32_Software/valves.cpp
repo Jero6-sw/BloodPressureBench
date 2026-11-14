@@ -1,3 +1,4 @@
+
 #include "valves.h"
 #include "config.h"
 #include "peripherals.h"
@@ -30,12 +31,12 @@ void valvesInit() {
   valvesApply(CFG_STORAGE);               // etat de securite au demarrage
 }
 
-const char* valvesConfigName(BenchConfig c) {
+const char* valvesConfigName(BenchConfig cfg) {
   static const char* names[N_CONFIGS] = {
     "Gonflage (pompe)", "Pulsation/mesure", "Banc seul", "Bras seul",
     "Lectures croisees", "Boyle", "Stockage", "Purge"
   };
-  return names[c];
+  return names[cfg];
 }
 
 void valvesApply(BenchConfig cfg) {
@@ -84,9 +85,9 @@ bool valveLeakTest(int v, float p0_mmHg, float* slopeOut) {
   // 1. fermer strictement la vanne testee
   drive(v, false);
   // 2. pente de fuite sur 60 s au capteur ABP
-  float pStart = S.pressure;
+  float pStart = BPB_BenchState.pressure;
   delay(60000);
-  float slope = S.pressure - pStart;      // mmHg/min
+  float slope = BPB_BenchState.pressure - pStart;      // mmHg/min
   if (slopeOut) *slopeOut = slope;
   return slope < LEAK_SLOPE_MAX;          // seuil : < 1 mmHg/min
 }

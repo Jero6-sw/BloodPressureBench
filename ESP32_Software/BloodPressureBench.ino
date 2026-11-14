@@ -1,4 +1,5 @@
 
+
 /*
  * Banc de test - derive d'un ensemble tensiometre + brassard
  * Firmware ESP32-WROOM-32 - voir README_FR.md / README_EN.md a la racine du depot.
@@ -52,8 +53,8 @@ void setup() {
   valveSet(false);
 
   // Capteur ABP present ?
-  BPB_S.abpOk = abpPresent();
-  Serial.printf("[BANC] v%s - ABP %s\n", FW_VERSION, BPB_S.abpOk ? "OK" : "ABSENT");
+  BPB_BenchState.abpOk = abpPresent();
+  Serial.printf("[BANC] v%s - ABP %s\n", FW_VERSION, BPB_BenchState.abpOk ? "OK" : "ABSENT");
 
   // Systeme de fichiers (interface web + jsPDF)
   if (!LittleFS.begin(true)) Serial.println("[BANC] LittleFS: formatage/montage");

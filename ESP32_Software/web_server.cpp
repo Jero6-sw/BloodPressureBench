@@ -1,5 +1,6 @@
 
 
+
 #include "web_server.h"
 #include "config.h"
 #include "peripherals.h"
@@ -18,15 +19,15 @@ WebServer BPB_WebServer(80);   // definition ; declaree dans web_server.h
 void sendJson() {
   StaticJsonDocument<1024> d;
   d["version"] = FW_VERSION;
-  d["abp"] = BPB_S.abpOk;
-  d["pressure"] = BPB_S.pressure;
-  d["amp"] = BPB_S.amp;
-  d["ratio"] = BPB_S.ratio;
-  d["motor"] = BPB_S.motorOn;
-  d["valve"] = BPB_S.valveOpen;
-  d["step"] = BPB_S.step;
-  d["approval"] = BPB_S.waitingApproval;
-  d["approvalMsg"] = BPB_S.approvalMsg;
+  d["abp"] = BPB_BenchState.abpOk;
+  d["pressure"] = BPB_BenchState.pressure;
+  d["amp"] = BPB_BenchState.amp;
+  d["ratio"] = BPB_BenchState.ratio;
+  d["motor"] = BPB_BenchState.motorOn;
+  d["valve"] = BPB_BenchState.valveOpen;
+  d["step"] = BPB_BenchState.step;
+  d["approval"] = BPB_BenchState.waitingApproval;
+  d["approvalMsg"] = BPB_BenchState.approvalMsg;
   String o;
   serializeJson(d, o);
   BPB_WebServer.send(200, "application/json", o);
@@ -38,18 +39,18 @@ void handleValue() {
   deserializeJson(d, BPB_WebServer.arg("plain"));
   const char* k = d["key"] | "";
   float v = d["value"] | 0.0f;
-  if      (!strcmp(k, "mano"))    BPB_S.pReads[d["idx"] | 0] = v;
-  else if (!strcmp(k, "display")) BPB_S.displayed[d["idx"] | 0] = v;
-  else if (!strcmp(k, "temp"))    BPB_S.tempC = v;
+  if      (!strcmp(k, "mano"))    BPB_BenchState.pReads[d["idx"] | 0] = v;
+  else if (!strcmp(k, "display")) BPB_BenchState.displayed[d["idx"] | 0] = v;
+  else if (!strcmp(k, "temp"))    BPB_BenchState.tempC = v;
   else if (!strcmp(k, "boyle")) {
-    BPB_S.boyleV = (760.0f + BPB_S.pressure) * 10.0f / (v != 0 ? v : 1);       // V = P_abs * dV / dP
-    float dPexp = (760.0f + BPB_S.pressure) * 10.0f / (BPB_S.boyleV - 10.0f);  // etape 2 departage : gain attendu
-    BPB_S.gainErrPct = (dPexp > 0.1f) ? (v - dPexp) / dPexp * 100.0f : 0;   // > ~1,5 mmHg a 100 mmHg => derive electronique
+    BPB_BenchState.boyleV = (760.0f + BPB_BenchState.pressure) * 10.0f / (v != 0 ? v : 1);       // V = P_abs * dV / dP
+    float dPexp = (760.0f + BPB_BenchState.pressure) * 10.0f / (BPB_BenchState.boyleV - 10.0f);  // etape 2 departage : gain attendu
+    BPB_BenchState.gainErrPct = (dPexp > 0.1f) ? (v - dPexp) / dPexp * 100.0f : 0;   // > ~1,5 mmHg a 100 mmHg => derive electronique
   }
-  else if (!strcmp(k, "operator"))strlcpy(BPB_S.operatorName, d["value"] | "", sizeof(BPB_S.operatorName));
-  else if (!strcmp(k, "sn"))      strlcpy(BPB_S.deviceSN, d["value"] | "", sizeof(BPB_S.deviceSN));
-  else if (!strcmp(k, "fwdev"))   strlcpy(BPB_S.fwDevice, d["value"] | "", sizeof(BPB_S.fwDevice));
-  else if (!strcmp(k, "patient")) strlcpy(BPB_S.patientName, d["value"] | "", sizeof(BPB_S.patientName));
+  else if (!strcmp(k, "operator"))strlcpy(BPB_BenchState.operatorName, d["value"] | "", sizeof(BPB_BenchState.operatorName));
+  else if (!strcmp(k, "sn"))      strlcpy(BPB_BenchState.deviceSN, d["value"] | "", sizeof(BPB_BenchState.deviceSN));
+  else if (!strcmp(k, "fwdev"))   strlcpy(BPB_BenchState.fwDevice, d["value"] | "", sizeof(BPB_BenchState.fwDevice));
+  else if (!strcmp(k, "patient")) strlcpy(BPB_BenchState.patientName, d["value"] | "", sizeof(BPB_BenchState.patientName));
   BPB_WebServer.send(200, "application/json", "{}");
 }
 
@@ -57,21 +58,21 @@ void handleValue() {
 void handleReport() {
   StaticJsonDocument<2048> d;
   d["version"] = FW_VERSION;
-  d["pressure"] = BPB_S.pressure;
-  d["leakSlope"] = BPB_S.leakSlope;
-  d["leakSlopeArm"] = BPB_S.leakSlopeArm;
-  d["boyleV"] = BPB_S.boyleV;
+  d["pressure"] = BPB_BenchState.pressure;
+  d["leakSlope"] = BPB_BenchState.leakSlope;
+  d["leakSlopeArm"] = BPB_BenchState.leakSlopeArm;
+  d["boyleV"] = BPB_BenchState.boyleV;
   JsonArray pr = d.createNestedArray("pReads");
-  for (float x : BPB_S.pReads) pr.add(x);
+  for (float x : BPB_BenchState.pReads) pr.add(x);
   JsonArray dp = d.createNestedArray("displayed");
-  for (float x : BPB_S.displayed) dp.add(x);
-  d["tempC"] = BPB_S.tempC;
-  d["operator"] = BPB_S.operatorName;
-  d["deviceSN"] = BPB_S.deviceSN;
-  d["fwDevice"] = BPB_S.fwDevice;
-  d["zeroOffset"] = BPB_S.zeroOffset;
-  d["gainErrPct"] = BPB_S.gainErrPct;
-  d["patient"] = BPB_S.patientName;
+  for (float x : BPB_BenchState.displayed) dp.add(x);
+  d["tempC"] = BPB_BenchState.tempC;
+  d["operator"] = BPB_BenchState.operatorName;
+  d["deviceSN"] = BPB_BenchState.deviceSN;
+  d["fwDevice"] = BPB_BenchState.fwDevice;
+  d["zeroOffset"] = BPB_BenchState.zeroOffset;
+  d["gainErrPct"] = BPB_BenchState.gainErrPct;
+  d["patient"] = BPB_BenchState.patientName;
   String o;
   serializeJson(d, o);
   BPB_WebServer.send(200, "application/json", o);
@@ -86,7 +87,7 @@ void handleStart() {
 }
 
 void handleApprove() {
-  BPB_S.waitingApproval = false;
+  BPB_BenchState.waitingApproval = false;
   procedureAdvance();
   BPB_WebServer.send(200, "application/json", "{}");
 }
@@ -104,9 +105,9 @@ void handlePatients() {
 
 // ---------- POST /api/publish : publication MQTT (etalonnage + mesures chiffrees) ----------
 void handlePublish() {
-  bool c = mqttPublishCalib();
-  bool m = mqttPublishMeasures();
-  String r = "{\"calib\":" + String(c ? "true" : "false") + ",\"mesures\":" + String(m ? "true" : "false") + "}";
+  bool okCalib   = mqttPublishCalib();      // noms explicites (pas de c/m jetables)
+  bool okMesures = mqttPublishMeasures();
+  String r = "{\"calib\":" + String(okCalib ? "true" : "false") + ",\"mesures\":" + String(okMesures ? "true" : "false") + "}";
   BPB_WebServer.send(200, "application/json", r);
 }
 
@@ -124,13 +125,13 @@ void handleWifiConfig() {
 void handleGetConfig() {
   StaticJsonDocument<512> d;
   d["configured"] = provHasConfig();
-  ProvCfg c = provLoad();
+  ProvCfg BPB_c = provLoad();
   if (provHasConfig()) {
-    d["ssid"] = c.ssid; d["ip"] = c.ip; d["gw"] = c.gw; d["mask"] = c.mask;
+    d["ssid"] = BPB_c.ssid; d["ip"] = BPB_c.ip; d["gw"] = BPB_c.gw; d["mask"] = BPB_c.mask;
   }
-  d["mqttHost"] = c.mqttHost;                 // broker MQTT (NVS)
-  d["caSet"]   = c.caPem.length()  > 0;       // CA TLS present en NVS (non renvoye)
-  d["aesSet"]  = c.aesKey.length() > 0;       // cle AES presente en NVS (non renvoyee)
+  d["mqttHost"] = BPB_c.mqttHost;                 // broker MQTT (NVS)
+  d["caSet"]   = BPB_c.caPem.length()  > 0;       // CA TLS present en NVS (non renvoye)
+  d["aesSet"]  = BPB_c.aesKey.length() > 0;       // cle AES presente en NVS (non renvoyee)
   String o; serializeJson(d, o);
   BPB_WebServer.send(200, "application/json", o);
 }
@@ -140,10 +141,10 @@ void handleGetConfig() {
 void handleMqttConfig() {
   StaticJsonDocument<4096> d;
   deserializeJson(d, BPB_WebServer.arg("plain"));
-  ProvCfg cur = provLoad();
-  String host = d["host"] | ""; if (!host.length()) host = cur.mqttHost;
-  String ca   = d["ca"]   | ""; if (!ca.length())   ca   = cur.caPem;
-  String aes  = d["aes"]  | ""; if (!aes.length())  aes  = cur.aesKey;
+  ProvCfg BPB_cur = provLoad();
+  String host = d["host"] | ""; if (!host.length()) host = BPB_cur.mqttHost;
+  String ca   = d["ca"]   | ""; if (!ca.length())   ca   = BPB_cur.caPem;
+  String aes  = d["aes"]  | ""; if (!aes.length())  aes  = BPB_cur.aesKey;
   provSaveMqtt(host.c_str(), ca.c_str(), aes.c_str());
   BPB_WebServer.send(200, "application/json", "{\"saved\":true,\"reboot\":true}");
   delay(500);

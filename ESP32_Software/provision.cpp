@@ -1,4 +1,5 @@
 
+
 #include "provision.h"
 
 #include <WiFi.h>
@@ -34,16 +35,16 @@ void provSaveMqtt(const char* host, const char* ca, const char* aes) {
 }
 
 ProvCfg provLoad() {
-  ProvCfg c;
+  ProvCfg BPB_c;
   BPB_nvs.begin("banc", true);
-  c.ssid = BPB_nvs.getString("ssid", "");
-  c.pass = BPB_nvs.getString("pass", "");
-  c.ip   = BPB_nvs.getString("ip",   "");
-  c.gw   = BPB_nvs.getString("gw",   "");
-  c.mask = BPB_nvs.getString("mask", "255.255.255.0");
-  c.mqttHost = BPB_nvs.getString("mhost", "");
-  c.caPem    = BPB_nvs.getString("ca",    "");
-  c.aesKey   = BPB_nvs.getString("aes",   "");
+  BPB_c.ssid = BPB_nvs.getString("ssid", "");
+  BPB_c.pass = BPB_nvs.getString("pass", "");
+  BPB_c.ip   = BPB_nvs.getString("ip",   "");
+  BPB_c.gw   = BPB_nvs.getString("gw",   "");
+  BPB_c.mask = BPB_nvs.getString("mask", "255.255.255.0");
+  BPB_c.mqttHost = BPB_nvs.getString("mhost", "");
+  BPB_c.caPem    = BPB_nvs.getString("ca",    "");
+  BPB_c.aesKey   = BPB_nvs.getString("aes",   "");
   BPB_nvs.end();
   return c;
 }
@@ -55,19 +56,19 @@ void provClear() {
 }
 
 void provApplySta() {
-  ProvCfg c = provLoad();
-  if (c.ssid.length() == 0) return;
-  if (c.ip.length() > 0) {                       // IP fixe optionnelle
+  ProvCfg BPB_c = provLoad();
+  if (BPB_c.ssid.length() == 0) return;
+  if (BPB_c.ip.length() > 0) {                       // IP fixe optionnelle
     IPAddress ip, gw, mask;
-    ip.fromString(c.ip);
-    gw.fromString(c.gw);
-    mask.fromString(c.mask);
+    ip.fromString(BPB_c.ip);
+    gw.fromString(BPB_c.gw);
+    mask.fromString(BPB_c.mask);
     WiFi.config(ip, gw, mask);
   }
-  WiFi.begin(c.ssid.c_str(), c.pass.c_str());     // reconnexion automatique
+  WiFi.begin(BPB_c.ssid.c_str(), BPB_c.pass.c_str());     // reconnexion automatique
 }
 
 String provSsid() {
-  ProvCfg c = provLoad();
-  return c.ssid;
+  ProvCfg BPB_c = provLoad();
+  return BPB_c.ssid;
 }

@@ -1,4 +1,5 @@
 
+
 #include "procedure.h"
 #include "config.h"
 
@@ -32,15 +33,15 @@ static const BPB_Step* getStep(int i) { return (curTable && i < curLen) ? &curTa
 static int             getStepCount() { return curLen; }
 
 void procedureStart(const BPB_Step* tbl, int len) {
-  curTable = tbl; curLen = len; BPB_S.step = 0;
+  curTable = tbl; curLen = len; BPB_BenchState.step = 0;
   procedureRunAuto(0);
 }
 
 void procedureAdvance() {
   if (!curTable) return;
-  BPB_S.step++;
-  if (BPB_S.step >= curLen) { BPB_S.step = curLen; return; }   // sequence terminee
-  procedureRunAuto(BPB_S.step);
+  BPB_BenchState.step++;
+  if (BPB_BenchState.step >= curLen) { BPB_BenchState.step = curLen; return; }   // sequence terminee
+  procedureRunAuto(BPB_BenchState.step);
 }
 
 // ---------- Partie automatique des etapes ----------
@@ -51,38 +52,38 @@ void procedureAdvance() {
 void procedureRunAuto(int idx) {
   const BPB_Step* st = getStep(idx);
   if (!st) return;
-  strlcpy(BPB_S.approvalMsg, st->instr, sizeof(BPB_S.approvalMsg));
-  if (st->type == 'M') { BPB_S.waitingApproval = true; return; }   // l'operateur doit confirmer
+  strlcpy(BPB_BenchState.approvalMsg, st->instr, sizeof(BPB_BenchState.approvalMsg));
+  if (st->type == 'M') { BPB_BenchState.waitingApproval = true; return; }   // l'operateur doit confirmer
 
   // --- actions automatiques ---
   if (curTable == CALIB) {
     switch (idx) {
       case 1:  // gonflage a 100 mmHg
         motorRun(true);
-        while (BPB_S.pressure < P_TARGET_MMHG - P_TOLERANCE_MMHG) delay(5);
+        while (BPB_BenchState.pressure < P_TARGET_MMHG - P_TOLERANCE_MMHG) delay(5);
         motorRun(false);
         break;
       case 3:  // etancheite banc seul : montee a 150 mmHg puis pente 60 s
         motorRun(true);
-        while (BPB_S.pressure < P_LEAKTEST_MMHG - 0.5f) delay(5);
+        while (BPB_BenchState.pressure < P_LEAKTEST_MMHG - 0.5f) delay(5);
         motorRun(false);
         {
-          float p0 = BPB_S.pressure;
+          float p0 = BPB_BenchState.pressure;
           delay(60000);
-          BPB_S.leakSlope = BPB_S.pressure - p0;          // mmHg/min (seuil : < 1)
+          BPB_BenchState.leakSlope = BPB_BenchState.pressure - p0;          // mmHg/min (seuil : < 1)
         }
         break;
       case 4:  // etancheite bras seul : pente 60 s (S1 45 deg + S3 ouvert cote operateur)
         {
-          float p0 = BPB_S.pressure;
+          float p0 = BPB_BenchState.pressure;
           delay(60000);
-          BPB_S.leakSlopeArm = BPB_S.pressure - p0;
+          BPB_BenchState.leakSlopeArm = BPB_BenchState.pressure - p0;
         }
         break;
       case 5:  // zero a l'air libre : purge ouverte, capture de l'offset ABP (etape 1 du departage)
         valveSet(true);                        // purge ouverte -> pression atmospherique
         delay(3000);                           // stabilisation
-        BPB_S.zeroOffset = BPB_S.pressure;             // offset electronique direct (mmHg), mesure absolue
+        BPB_BenchState.zeroOffset = BPB_BenchState.pressure;             // offset electronique direct (mmHg), mesure absolue
         valveSet(false);                       // l'operateur verifie l'ovale zero de l'aneroide puis valide
         break;
       case 8:  // amplitude + forme sur 4 s de pulsation
@@ -92,5 +93,5 @@ void procedureRunAuto(int idx) {
         break;
     }
   }
-  BPB_S.waitingApproval = true;   // l'operateur valide le resultat de l'action auto
+  BPB_BenchState.waitingApproval = true;   // l'operateur valide le resultat de l'action auto
 }

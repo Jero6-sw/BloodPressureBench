@@ -1,4 +1,5 @@
 
+
 #include "mqtt_link.h"
 #include "config.h"
 #include "peripherals.h"
@@ -36,10 +37,10 @@ static String encryptAesGcm(const char* plain, size_t len) {
 // ---------- Connexion ----------
 void mqttSetup() {
   if (!provHasConfig()) return;               // pas de reseau NVS => MQTT inactif
-  ProvCfg c = provLoad();
-  BPB_mqttHost = c.BPB_mqttHost.length() ? c.BPB_mqttHost : MQTT_HOST;
-  BPB_caPem    = c.BPB_caPem.length()    ? c.BPB_caPem    : MQTT_CA_CERT;
-  BPB_aesKey   = c.BPB_aesKey.length()   ? c.BPB_aesKey   : MQTT_AES_KEY;
+  ProvCfg BPB_c = provLoad();
+  BPB_mqttHost = BPB_c.mqttHost.length() ? BPB_c.mqttHost : MQTT_HOST;
+  BPB_caPem    = BPB_c.caPem.length()    ? BPB_c.caPem    : MQTT_CA_CERT;
+  BPB_aesKey   = BPB_c.aesKey.length()   ? BPB_c.aesKey   : MQTT_AES_KEY;
   if (BPB_aesKey.length() < 32) {                  // cle AES obligatoire (32 octets)
     Serial.println("[MQTT] Cle AES absente ou trop courte : MQTT inactif");
     return;
@@ -59,15 +60,15 @@ void mqttLoop() {
 bool mqttPublishCalib() {
   if (!mqttActive || !BPB_mqtt.connected()) return false;
   StaticJsonDocument<768> d;
-  d["zeroOffset"]  = BPB_S.zeroOffset;            // etape 1 : zero ABP air libre
-  d["gainErrPct"]  = BPB_S.gainErrPct;            // etape 2 : gain Boyle
-  d["leakSlope"]   = BPB_S.leakSlope;             // etape 3 : croisement -> pReads
-  d["leakSlopeArm"]= BPB_S.leakSlopeArm;
-  d["boyleV"]      = BPB_S.boyleV;
+  d["zeroOffset"]  = BPB_BenchState.zeroOffset;            // etape 1 : zero ABP air libre
+  d["gainErrPct"]  = BPB_BenchState.gainErrPct;            // etape 2 : gain Boyle
+  d["leakSlope"]   = BPB_BenchState.leakSlope;             // etape 3 : croisement -> pReads
+  d["leakSlopeArm"]= BPB_BenchState.leakSlopeArm;
+  d["boyleV"]      = BPB_BenchState.boyleV;
   JsonArray pr = d.createNestedArray("pReads");
-  for (float x : BPB_S.pReads) pr.add(x);
-  d["tempC"] = BPB_S.tempC;
-  d["operator"] = BPB_S.operatorName;
+  for (float x : BPB_BenchState.pReads) pr.add(x);
+  d["tempC"] = BPB_BenchState.tempC;
+  d["operator"] = BPB_BenchState.operatorName;
   d["version"] = FW_VERSION;
   String o; serializeJson(d, o);
   return BPB_mqtt.publish(MQTT_TOPIC "/calib", o.c_str());
@@ -77,12 +78,12 @@ bool mqttPublishCalib() {
 bool mqttPublishMeasures() {
   if (!mqttActive || !BPB_mqtt.connected()) return false;
   StaticJsonDocument<512> d;
-  d["patient"]  = BPB_S.patientName;              // liste predefinie, choisi en debut de test
-  d["operator"] = BPB_S.operatorName;
-  d["deviceSN"] = BPB_S.deviceSN;
-  d["tempC"]    = BPB_S.tempC;
+  d["patient"]  = BPB_BenchState.patientName;              // liste predefinie, choisi en debut de test
+  d["operator"] = BPB_BenchState.operatorName;
+  d["deviceSN"] = BPB_BenchState.deviceSN;
+  d["tempC"]    = BPB_BenchState.tempC;
   JsonArray ms = d.createNestedArray("displayed");
-  for (float x : BPB_S.displayed) ms.add(x);
+  for (float x : BPB_BenchState.displayed) ms.add(x);
   String o; serializeJson(d, o);
   String enc = encryptAesGcm(o.c_str(), o.length());   // AES-256-GCM bout en bout
   return BPB_mqtt.publish(MQTT_TOPIC "/mesures", enc.c_str());
