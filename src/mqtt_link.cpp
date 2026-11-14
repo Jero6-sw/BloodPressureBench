@@ -1,4 +1,5 @@
 
+
 #include "mqtt_link.h"
 #include "config.h"
 #include "peripherals.h"
@@ -49,14 +50,13 @@ void mqttSetup() {
     Serial.println("[MQTT] Cle AES absente ou trop courte : MQTT inactif");
     return;
   }
-  if (BPB_caPem.length() > 0) {              // CA epingle (verifie : PEM invalide = cause frequente)
-    if (!BPB_tlsClient.setCACert(BPB_caPem.c_str())) {
-      Serial.println("[MQTT] ERREUR : CA PEM invalide (coller le bloc BEGIN/END CERTIFICATE complet de ca.crt)");
-      return;
-    }
-  } else {
-    Serial.println("[MQTT] AVERTISSEMENT : aucun CA epingle -> le broker TLS refusera probablement la session");
+  // CA epingle. NB : selon la version du core ESP32, setCACert() retourne void
+  // (core 3.x) ou bool (core 2.x) -> on valide le PEM par son contenu.
+  if (BPB_caPem.indexOf("BEGIN CERTIFICATE") < 0) {
+    Serial.println("[MQTT] ERREUR : CA PEM absent ou invalide (coller le bloc BEGIN/END CERTIFICATE complet de ca.crt)");
+    return;
   }
+  BPB_tlsClient.setCACert(BPB_caPem.c_str());
   BPB_mqtt.setServer(BPB_mqttHost.c_str(), MQTT_PORT);
   mqttActive = true;                          // STA gere par provision (setup du .ino)
   Serial.printf("[MQTT] Actif : %s:%d (CA %s, cle AES OK)\n",
