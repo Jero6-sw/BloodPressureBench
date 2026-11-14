@@ -14,14 +14,17 @@ static WiFiClientSecure tlsClient;
 static PubSubClient     mqtt(tlsClient);
 static bool             mqttActive = false;
 
+// Config effective : NVS si renseignee, sinon repli config.h
+static String mqttHost, caPem, aesKey;
+
 // ---------- Chiffrement AES-256-GCM du payload mesures ----------
-// Sortie base64( IV(12) || chiffre || TAG(16) ). Cle : MQTT_AES_KEY (NVS en prod).
+// Sortie base64( IV(12) || chiffre || TAG(16) ). Cle : NVS (provision).
 static String encryptAesGcm(const char* plain, size_t len) {
   unsigned char iv[12], tag[16], out[256];
   for (int i = 0; i < 12; i++) iv[i] = (unsigned char)esp_random();
   mbedtls_gcm_context gcm;
   mbedtls_gcm_init(&gcm);
-  mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, (const unsigned char*)MQTT_AES_KEY, 256);
+  mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, (const unsigned char*)aesKey.c_str(), 256);
   mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, len, iv, 12, nullptr, 0,
                             (const unsigned char*)plain, out, 16, tag);
   mbedtls_gcm_free(&gcm);
@@ -32,9 +35,17 @@ static String encryptAesGcm(const char* plain, size_t len) {
 // ---------- Connexion ----------
 void mqttSetup() {
   if (!provHasConfig()) return;               // pas de reseau NVS => MQTT inactif
+  ProvCfg c = provLoad();
+  mqttHost = c.mqttHost.length() ? c.mqttHost : MQTT_HOST;
+  caPem    = c.caPem.length()    ? c.caPem    : MQTT_CA_CERT;
+  aesKey   = c.aesKey.length()   ? c.aesKey   : MQTT_AES_KEY;
+  if (aesKey.length() < 32) {                  // cle AES obligatoire (32 octets)
+    Serial.println("[MQTT] Cle AES absente ou trop courte : MQTT inactif");
+    return;
+  }
+  if (caPem.length() > 0) tlsClient.setCACert(caPem.c_str());  // CA epingle
+  mqtt.setServer(mqttHost.c_str(), MQTT_PORT);
   mqttActive = true;                          // STA gere par provision (setup du .ino)
-  if (strlen(MQTT_CA_CERT) > 0) tlsClient.setCACert(MQTT_CA_CERT);  // CA epingle
-  mqtt.setServer(MQTT_HOST, MQTT_PORT);
 }
 
 void mqttLoop() {

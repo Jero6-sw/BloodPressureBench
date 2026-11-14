@@ -2,13 +2,13 @@
 #define MQTT_LINK_H
 
 // ---------- MQTT TLS : stockage des mesures d'etalonnage + tension ----------
-// - Banc/tensiometre/calib   : mesures d'etalonnage (JSON, transport TLS)
-// - Banc/tensiometre/mesures : mesures de tension CHIFFREES AES-256-GCM
+// - banc/tensiometre/calib    : mesures d'etalonnage (JSON, transport TLS)
+// - banc/tensiometre/mesures : mesures de tension CHIFFREES AES-256-GCM
 //   (TLS protege le transport, l'AES protege le message de bout en bout).
-// Liste des patients predefinie dans config.h (PATIENT_LIST).
-// Silencieux si MQTT_STA_SSID == "CHANGE" (banc autonome, publication differee).
+// Broker, CA TLS et cle AES lus depuis la NVS (interface web) ; config.h =
+// valeurs de repli. MQTT inactif si aucun reseau n'est configure en NVS.
 
-void mqttSetup();                   // connexion STA + broker (appelee par setupServer)
+void mqttSetup();                   // CA epingle + serveur broker (appelee par setupServer)
 void mqttLoop();                    // keepalive + reconnexion (a appeler dans loop())
 bool mqttPublishCalib();            // mesures d'etalonnage de la session
 bool mqttPublishMeasures();         // mesures de tension chiffrees + patient

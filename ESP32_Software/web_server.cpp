@@ -1,3 +1,4 @@
+
 #include "web_server.h"
 #include "config.h"
 #include "peripherals.h"
@@ -118,16 +119,34 @@ void handleWifiConfig() {
   ESP.restart();
 }
 
-// ---------- GET /api/config : configuration NVS en cours (sans mot de passe) ----------
+// ---------- GET /api/config : configuration NVS en cours (sans secrets) ----------
 void handleGetConfig() {
-  StaticJsonDocument<256> d;
+  StaticJsonDocument<512> d;
   d["configured"] = provHasConfig();
+  ProvCfg c = provLoad();
   if (provHasConfig()) {
-    ProvCfg c = provLoad();
     d["ssid"] = c.ssid; d["ip"] = c.ip; d["gw"] = c.gw; d["mask"] = c.mask;
   }
+  d["mqttHost"] = c.mqttHost;                 // broker MQTT (NVS)
+  d["caSet"]   = c.caPem.length()  > 0;       // CA TLS present en NVS (non renvoye)
+  d["aesSet"]  = c.aesKey.length() > 0;       // cle AES presente en NVS (non renvoyee)
   String o; serializeJson(d, o);
   server.send(200, "application/json", o);
+}
+
+// ---------- POST /api/mqtt : broker + CA TLS + cle AES -> NVS, puis redemarrage ----------
+// Champs laisses vides = valeurs NVS conservees (pas de re-saisie du PEM/cle).
+void handleMqttConfig() {
+  StaticJsonDocument<4096> d;
+  deserializeJson(d, server.arg("plain"));
+  ProvCfg cur = provLoad();
+  String host = d["host"] | ""; if (!host.length()) host = cur.mqttHost;
+  String ca   = d["ca"]   | ""; if (!ca.length())   ca   = cur.caPem;
+  String aes  = d["aes"]  | ""; if (!aes.length())  aes  = cur.aesKey;
+  provSaveMqtt(host.c_str(), ca.c_str(), aes.c_str());
+  server.send(200, "application/json", "{\"saved\":true,\"reboot\":true}");
+  delay(500);
+  ESP.restart();
 }
 
 // ---------- POST /api/reset : efface la NVS reseau et redemarre en mode AP ----------
@@ -148,7 +167,8 @@ void setupServer() {
   server.on("/api/patients", HTTP_GET,  handlePatients);
   server.on("/api/publish",  HTTP_POST, handlePublish);
   server.on("/api/wifi",    HTTP_POST, handleWifiConfig);    // NVS : reseau + IP fixe
-  server.on("/api/config",  HTTP_GET,  handleGetConfig);     // NVS : lecture (sans passe)
+  server.on("/api/mqtt",    HTTP_POST, handleMqttConfig);    // NVS : broker + CA TLS + cle AES
+  server.on("/api/config",  HTTP_GET,  handleGetConfig);     // NVS : lecture (sans secrets)
   server.on("/api/reset",   HTTP_POST, handleResetConfig);   // NVS : effacement -> AP
   server.serveStatic("/", LittleFS, "/www/");   // page web + jsPDF stockes en flash
   server.begin();

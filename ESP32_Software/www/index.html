@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -45,7 +46,7 @@
 
 <div class="card">
   <h2>Réseau & configuration (NVS)</h2>
-  <div class="k" style="font-size:.75rem;color:#777">Première mise en route : le banc est en mode AP <b>Banc-Tensiometre</b> — renseignez le réseau WiFi et l'IP fixe ; ils seront sauvegardés en NVS et utilisés automatiquement ensuite.</div>
+  <div class="k" style="font-size:.75rem;color:#777">Première mise en route : le banc est en mode AP <b>Banc-Tensiometre</b> (192.168.4.1) — renseignez le réseau WiFi, l'IP fixe, le broker MQTT, le CA TLS et la clé AES ; tout est sauvegardé en NVS. Dès qu'un réseau est configuré et joignable, <b>l'AP est coupé</b> (réactivé en secours si le réseau est introuvable).</div>
   <div class="row" style="margin-top:.6rem">
     <label>SSID <input id="f_ssid"></label>
     <label>Mot de passe <input id="f_pass" type="password"></label>
@@ -56,6 +57,18 @@
   <div class="row" style="margin-top:.6rem">
     <button class="sec" onclick="saveWifi()">Enregistrer dans la NVS et redémarrer</button>
     <button class="sec" onclick="clearWifi()">Effacer la config et repasser en mode AP</button>
+  </div>
+  <div class="row" style="margin-top:.8rem">
+    <label>Broker MQTT (IP) <input id="f_mhost" placeholder="192.168.1.10"></label>
+    <label>Clé AES-256 (32 caractères) <input id="f_aes" type="password" placeholder="laisser vide pour conserver"></label>
+  </div>
+  <div class="row" style="margin-top:.4rem">
+    <label style="flex:1 1 100%">CA TLS du broker (PEM)
+      <textarea id="f_ca" rows="4" style="width:100%;font-family:monospace;font-size:.75rem" placeholder="-----BEGIN CERTIFICATE-----&#10;(laisser vide pour conserver le CA déjà enregistré)"></textarea>
+    </label>
+  </div>
+  <div class="row" style="margin-top:.4rem">
+    <button class="sec" onclick="saveMqtt()">Enregistrer la config MQTT dans la NVS et redémarrer</button>
   </div>
 </div>
 
@@ -160,6 +173,9 @@ async function loadNetConfig() {
       el('#f_ssid').value = c.ssid; el('#f_ip').value = c.ip;
       el('#f_gw').value = c.gw; el('#f_mask').value = c.mask;
     }
+    if (c.mqttHost) el('#f_mhost').value = c.mqttHost;
+    if (c.caSet) el('#f_ca').placeholder = 'CA TLS déjà enregistré en NVS — laisser vide pour le conserver.';
+    if (c.aesSet) el('#f_aes').placeholder = 'Clé AES déjà enregistrée en NVS — laisser vide pour la conserver.';
   } catch (e) {}
 }
 async function saveWifi() {
@@ -167,6 +183,11 @@ async function saveWifi() {
               ip: el('#f_ip').value, gw: el('#f_gw').value, mask: el('#f_mask').value };
   await fetch('/api/wifi', { method: 'POST', body: JSON.stringify(c) });
   alert('Enregistré dans la NVS. Le banc redémarre et se connectera automatiquement au réseau.');
+}
+async function saveMqtt() {
+  const c = { host: el('#f_mhost').value, ca: el('#f_ca').value, aes: el('#f_aes').value };
+  await fetch('/api/mqtt', { method: 'POST', body: JSON.stringify(c) });
+  alert('Config MQTT enregistrée dans la NVS. Le banc redémarre et publie vers ce broker.');
 }
 async function clearWifi() {
   if (!confirm('Effacer la configuration réseau et redémarrer en mode AP (Banc-Tensiometre) ?')) return;

@@ -1,3 +1,4 @@
+
 # ESP32_Software — firmware du banc
 
 Firmware du serveur embarqué du banc (**ESP32-WROOM-32**, DevKit v1 — brochage remappé : GPIO 6-11 interdits = flash interne, 34-39 entrée seule ; Arduino IDE ou PlatformIO).
@@ -12,7 +13,7 @@ Firmware du serveur embarqué du banc (**ESP32-WROOM-32**, DevKit v1 — brochag
 | `procedure.h/.cpp` | **Moteur de procédure** : étapes de l'auto-diagnostic et du test, approbation manuelle bloquante |
 | `valves.h/.cpp` | **Électrovannes** (variante automatisée, README § 3 f) : application de la matrice de configurations (`valvesApply()`), auto-test d'isolement par vanne (`valveLeakTest()`), état de sécurité à la coupure |
 | `mqtt_link.h/.cpp` | **MQTT TLS 8883** : publication des mesures d'étalonnage (JSON) et des **mesures de tension chiffrées AES-256-GCM** ; liste patients `PATIENT_LIST` (`config.h`), endpoints `/api/patients` et `/api/publish` |
-| `provision.h/.cpp` | **NVS (Preferences)** : identifiants WiFi + IP fixe saisis au 1er démarrage via l'AP, **reconnexion STA automatique**, reconfiguration ou effacement depuis l'interface (`/api/wifi`, `/api/config`, `/api/reset`) |
+| `provision.h/.cpp` | **NVS (Preferences)** : identifiants WiFi + IP fixe saisis au 1er démarrage via l'AP, **+ config MQTT (IP broker, CA TLS, clé AES)** via `/api/mqtt` ; **reconnexion STA automatique** (AP coupé dès que le réseau sauvegardé est joignable, réactivé en secours si introuvable), reconfiguration ou effacement depuis l'interface (`/api/wifi`, `/api/config`, `/api/reset`) |
 | `web_server.h/.cpp` | **Serveur web** : API REST (`/api/status`, `/api/start`, `/api/approve`, `/api/value`, `/api/report`), fichiers statiques |
 | `www/index.html` | Interface web : statut temps réel, modales d'approbation, formulaire de session |
 | `www/report.js` | **Impression / rapport PDF** : assemblage du PDF **côté navigateur** via jsPDF, téléchargement local |
@@ -32,7 +33,7 @@ La page et jsPDF sont stockés dans la partition **LittleFS** de l'ESP32 :
 
 ## Utilisation
 
-1. **Première mise en route** : le banc crée le réseau WiFi **`Banc-Tensiometre`** (mot de passe `Banc10ans!`) ; saisir dans l'interface (carte « Réseau & configuration ») le réseau du domicile et l'**IP fixe** → sauvegardés en **NVS**, reconnexion automatique ensuite (AP maintenu en secours pour l'interface) ;
+1. **Première mise en route** : le banc crée le réseau WiFi **`Banc-Tensiometre`** (mot de passe `Banc10ans!`) ; saisir dans l'interface (carte « Réseau & configuration ») le réseau du domicile, l'**IP fixe**, **l'IP du broker MQTT, le CA TLS et la clé AES** → sauvegardés en **NVS**, reconnexion automatique ensuite (**AP coupé** dès que le réseau sauvegardé est joignable, réactivé en secours si introuvable) ;
 2. S'y connecter depuis un navigateur (téléphone ou PC) — l'interface s'ouvre à la racine ;
 3. Suivre la procédure guidée d'auto-diagnostic puis de test ; chaque geste manuel (positions S1-S4, chuck, brassard, seringue de calibration) requiert une **approbation bloquante** ;
 4. En fin de session, compléter le formulaire et générer le **rapport PDF**.

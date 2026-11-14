@@ -23,6 +23,15 @@ void provSave(const char* ssid, const char* pass,
   nvs.end();
 }
 
+// Config MQTT : IP du broker, CA TLS (PEM) et cle AES-256 (chiffrement des mesures)
+void provSaveMqtt(const char* host, const char* ca, const char* aes) {
+  nvs.begin("banc", false);
+  nvs.putString("mhost", host);
+  nvs.putString("ca",    ca);
+  nvs.putString("aes",   aes);
+  nvs.end();
+}
+
 ProvCfg provLoad() {
   ProvCfg c;
   nvs.begin("banc", true);
@@ -31,6 +40,9 @@ ProvCfg provLoad() {
   c.ip   = nvs.getString("ip",   "");
   c.gw   = nvs.getString("gw",   "");
   c.mask = nvs.getString("mask", "255.255.255.0");
+  c.mqttHost = nvs.getString("mhost", "");
+  c.caPem    = nvs.getString("ca",    "");
+  c.aesKey   = nvs.getString("aes",   "");
   nvs.end();
   return c;
 }

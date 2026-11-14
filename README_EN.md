@@ -1,3 +1,4 @@
+
 # Automated test bench — drift monitoring of a blood pressure monitor + cuff assembly
 
 **Principle**: check the drift over time of the monitor + cuff assembly by submitting it to a **rigorously reproducible** mechanical stimulus — an artificial "arm" whose parameters do not age. An identical stimulus must produce an identical response: any variation over time = drift of the assembly under test.
@@ -251,7 +252,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 
 ## 7. Software — ESP32_Software
 
-The ESP32 hosts a **local web interface**. On **first boot** the bench creates its own WiFi network `Banc-Tensiometre` (password `Banc10ans!`): the UI lets you enter the **home network and static IP**, saved to **NVS** — subsequent boots **automatically connect** to the saved network (AP kept as a fallback). Four functions:
+The ESP32 hosts a **local web interface**. On **first boot** the bench creates its own WiFi network `Banc-Tensiometre` (password `Banc10ans!`): the UI lets you enter the **home network, static IP, MQTT broker IP, TLS CA and AES-256 key**, saved to **NVS** — subsequent boots **automatically connect** to the saved network and the **configuration AP is switched off** (re-enabled as a fallback if the network is unreachable). Four functions:
 
 1. **Real-time status**: current pressure, amplitude and shape of the last pulse, motor/valve state.
 2. **Step-by-step self-calibration procedure** (§ 8 a): the bench runs the automatic part and **requests user approval for every manual gesture** (S1-S4 positions, chuck, cuff) — the motor is blocked until confirmation.
@@ -268,7 +269,7 @@ ESP32_Software/
 ├── procedure.h/.cpp         # Procedure engine: self-diagnostic and test steps
 ├── valves.h/.cpp           # Solenoid valves (variant § 3 f): configuration matrix, isolation self-test
 ├── mqtt_link.h/.cpp      # MQTT TLS 8883 + AES-256-GCM measurement encryption
-├── provision.h/.cpp      # NVS: WiFi credentials + static IP, automatic reconnection
+├── provision.h/.cpp      # NVS: WiFi + static IP + MQTT (broker, TLS CA, AES key), auto reconnection, AP off
 ├── web_server.h/.cpp        # Web server: REST API, static files
 └── www/
     ├── index.html           # Web UI (status, approval modals, form)
@@ -323,8 +324,8 @@ Sessions 3-6 months apart, same temperature ±2 °C:
 ---
 ### 8 d/ MQTT storage and measurement encryption
 
-- **Network — first commissioning (NVS)**: on first boot the bench creates its AP `Banc-Tensiometre` (192.168.4.1); the UI lets you enter **SSID, password and static IP**, saved to **NVS** (`provision.h/.cpp`, Preferences). Subsequent boots: **automatic reconnection** to the saved network whenever available, AP kept as a fallback for the UI. A button in the interface ("Réseau & configuration (NVS)") allows **reconfiguring or clearing** the NVS (back to AP mode).
-- **Broker**: MQTT over **TLS 8883** (Mosquitto on a Raspberry/NAS, ~€0-50). The bench joins as STA via the NVS; no network configured = module disabled (standalone bench on AP).
+- **Network — first commissioning (NVS)**: on first boot the bench creates its AP `Banc-Tensiometre` (192.168.4.1); the UI lets you enter **SSID, password, static IP, MQTT broker IP, TLS CA and AES-256 key**, saved to **NVS** (`provision.h/.cpp`, Preferences). Subsequent boots: **automatic reconnection** to the saved network and **AP switched off** (re-enabled as a fallback only if the network is unreachable for 60 s). A button in the interface ("Réseau & configuration (NVS)") allows **reconfiguring or clearing** the NVS (back to AP mode).
+- **Broker**: MQTT over **TLS 8883** (Mosquitto on a Raspberry/NAS, ~€0-50). The bench joins as STA via the NVS; the **broker IP, TLS CA and AES key** are stored in NVS through the same UI (`/api/mqtt`); no network configured = module disabled (standalone bench on AP).
 - **Calibration measurements**: published as JSON on `banc/tensiometre/calib` (zero, gain, leaks, V_boyle, levels, temperature, operator) — transport protected by TLS (pinned CA).
 - **Blood-pressure measurements**: payload **encrypted with AES-256-GCM** (key in NVS, random IV per message, base64 `IV:ciphertext:TAG`) on `banc/tensiometre/mesures` — TLS protects the transport, AES protects the message end to end.
 - **Patient**: asked **at test start** from a **predefined list** (`PATIENT_LIST` in `config.h`), served by `GET /api/patients`, mandatory selection in the web UI before the test.
