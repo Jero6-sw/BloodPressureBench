@@ -17,12 +17,12 @@
 #include <LittleFS.h>
 #include <WiFi.h>
 
-#include "config.h"
-#include "peripherals.h"
-#include "procedure.h"
-#include "web_server.h"
-#include "mqtt_link.h"
-#include "provision.h"
+#include "src/config.h"
+#include "src/peripherals.h"
+#include "src/procedure.h"
+#include "src/web_server.h"
+#include "src/mqtt_link.h"
+#include "src/provision.h"
 
 static uint32_t staStartMs = 0;
 static bool     fallbackAp = false;

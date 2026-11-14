@@ -46,7 +46,7 @@ ProvCfg provLoad() {
   BPB_c.caPem    = BPB_nvs.getString("ca",    "");
   BPB_c.aesKey   = BPB_nvs.getString("aes",   "");
   BPB_nvs.end();
-  return c;
+  return BPB_c;
 }
 
 void provClear() {
