@@ -44,6 +44,22 @@
 </div>
 
 <div class="card">
+  <h2>Réseau & configuration (NVS)</h2>
+  <div class="k" style="font-size:.75rem;color:#777">Première mise en route : le banc est en mode AP <b>Banc-Tensiometre</b> — renseignez le réseau WiFi et l'IP fixe ; ils seront sauvegardés en NVS et utilisés automatiquement ensuite.</div>
+  <div class="row" style="margin-top:.6rem">
+    <label>SSID <input id="f_ssid"></label>
+    <label>Mot de passe <input id="f_pass" type="password"></label>
+    <label>IP fixe <input id="f_ip" placeholder="192.168.1.50"></label>
+    <label>Passerelle <input id="f_gw" placeholder="192.168.1.1"></label>
+    <label>Masque <input id="f_mask" value="255.255.255.0"></label>
+  </div>
+  <div class="row" style="margin-top:.6rem">
+    <button class="sec" onclick="saveWifi()">Enregistrer dans la NVS et redémarrer</button>
+    <button class="sec" onclick="clearWifi()">Effacer la config et repasser en mode AP</button>
+  </div>
+</div>
+
+<div class="card">
   <h2>Procédures</h2>
   <button onclick="start('calib')">Auto-diagnostic (avant chaque session)</button>
   <button class="sec" onclick="start('test')">Test (5 mesures)</button>
@@ -137,6 +153,27 @@ async function publishMqtt() {
   await fetch('/api/publish', { method: 'POST' });
   alert('Publication MQTT demandée (voir réponse /api/publish).');
 }
+async function loadNetConfig() {
+  try {
+    const c = await (await fetch('/api/config')).json();
+    if (c.configured) {
+      el('#f_ssid').value = c.ssid; el('#f_ip').value = c.ip;
+      el('#f_gw').value = c.gw; el('#f_mask').value = c.mask;
+    }
+  } catch (e) {}
+}
+async function saveWifi() {
+  const c = { ssid: el('#f_ssid').value, pass: el('#f_pass').value,
+              ip: el('#f_ip').value, gw: el('#f_gw').value, mask: el('#f_mask').value };
+  await fetch('/api/wifi', { method: 'POST', body: JSON.stringify(c) });
+  alert('Enregistré dans la NVS. Le banc redémarre et se connectera automatiquement au réseau.');
+}
+async function clearWifi() {
+  if (!confirm('Effacer la configuration réseau et redémarrer en mode AP (Banc-Tensiometre) ?')) return;
+  await fetch('/api/reset', { method: 'POST' });
+  alert('Banc redémarré en mode AP : reconnectez-vous au réseau Banc-Tensiometre.');
+}
+loadNetConfig();
 loadPatients();
 poll();
 </script>

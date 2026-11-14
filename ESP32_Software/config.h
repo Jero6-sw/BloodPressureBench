@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 // ---------- Identification ----------
-#define FW_VERSION   "1.3.0-banc"
+#define FW_VERSION   "1.4.0-banc"
 
 // ---------- Capteur ABP (Honeywell ABPDRRV040MG2A3, 0-40 kPa, I2C) ----------
 #define ABP_ADDR     0x28
@@ -48,11 +48,10 @@
 #define AP_SSID      "Banc-Tensiometre"
 #define AP_PASSWORD  "Banc10ans!"
 
-// ---------- MQTT (v1.2.0) : stockage des mesures + chiffrement ----------
-// Le banc se connecte AUSSI en STA (en plus de son AP) pour joindre le broker.
-// Laisser MQTT_STA_SSID a "CHANGE" => module MQTT desactive (banc autonome).
-#define MQTT_STA_SSID  "CHANGE"          // reseau du broker
-#define MQTT_STA_PASS  ""
+// ---------- MQTT : stockage des mesures + chiffrement ----------
+// Le banc se connecte en STA via le module provision : identifiants WiFi et
+// IP fixe sont dans la NVS, configures au premier demarrage via l'interface
+// web de l'AP (provision.h/.cpp). Pas de reseau configure => MQTT inactif.
 #define MQTT_HOST      "192.168.1.10"    // broker (Mosquitto sur Raspberry/NAS)
 #define MQTT_PORT      8883              // TLS obligatoire
 #define MQTT_TOPIC     "banc/tensiometre"

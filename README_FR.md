@@ -293,7 +293,7 @@ Points de vigilance : TMC2209 en logique 3V3 ; masse unique commune à toutes le
 
 ## 7. Logiciel — ESP32_Software
 
-L'ESP32 héberge une **interface web locale** (le banc crée son propre réseau WiFi `Banc-Tensiometre`, mot de passe `Banc10ans!`). Quatre fonctions :
+L'ESP32 héberge une **interface web locale**. Au **premier démarrage**, le banc crée son propre réseau WiFi `Banc-Tensiometre` (mot de passe `Banc10ans!`) : l'interface permet de saisir le **réseau du domicile et l'IP fixe**, sauvegardés en **NVS** — les démarrages suivants se connectent **automatiquement** au réseau sauvegardé (AP maintenu en secours). Quatre fonctions :
 
 1. **Statut temps réel** : pression courante, amplitude et forme du dernier pulse, état moteur/vanne.
 2. **Procédure d'auto-étalonnage pas à pas** (§ 8 a) : le banc exécute la partie automatique et **demande l'approbation de l'utilisateur à chaque geste manuel** (positions S1-S4, chuck, brassard) — le moteur est bloqué jusqu'à confirmation.
@@ -309,6 +309,8 @@ ESP32_Software/
 ├── peripherals.h/.cpp       # Gestion périphériques : capteur ABP, moteur, vanne, acquisition 100 Hz
 ├── procedure.h/.cpp         # Moteur de procédure : étapes auto-diagnostic et test
 ├── valves.h/.cpp           # Électrovannes (variante § 3 f) : matrice de configurations, auto-test d'isolement
+├── mqtt_link.h/.cpp      # MQTT TLS 8883 + chiffrement AES-256-GCM des mesures
+├── provision.h/.cpp      # NVS : identifiants WiFi + IP fixe, reconnexion automatique
 ├── web_server.h/.cpp        # Serveur web : API REST, fichiers statiques
 └── www/
     ├── index.html           # Interface web (statut, modales d'approbation, formulaire)
@@ -363,7 +365,8 @@ Sessions espacées de 3 à 6 mois, même température ±2 °C :
 ---
 ### 8 d/ Stockage MQTT et chiffrement des mesures
 
-- **Broker** : MQTT sur **TLS 8883** (Mosquitto sur Raspberry/NAS, ~0-50 €). Le banc se connecte en STA en plus de son AP (`MQTT_STA_SSID` dans `config.h` ; `"CHANGE"` = module désactivé, banc autonome).
+- **Réseau — 1re mise en route (NVS)** : au premier démarrage, le banc crée son AP `Banc-Tensiometre` (192.168.4.1) ; l'interface permet de saisir **SSID, mot de passe et IP fixe**, enregistrés dans la **NVS** (`provision.h/.cpp`, Preferences). Démarrages suivants : **reconnexion automatique** au réseau sauvegardé dès qu'il est disponible, AP maintenu en secours pour l'interface. Un bouton de l'interface (« Réseau & configuration (NVS) ») permet de **reconfigurer ou d'effacer** la NVS (retour au mode AP).
+- **Broker** : MQTT sur **TLS 8883** (Mosquitto sur Raspberry/NAS, ~0-50 €). Le banc se connecte en STA via la NVS ; pas de réseau configuré = module désactivé (banc autonome sur AP).
 - **Mesures d'étalonnage** : publiées en JSON sur `banc/tensiometre/calib` (zéro, gain, fuites, V_boyle, paliers, température, opérateur) — transport protégé par TLS (CA épinglé).
 - **Mesures de tension** : payload **chiffré AES-256-GCM** (clé en NVS, IV aléatoire par message, base64 `IV:chiffré:TAG`) sur `banc/tensiometre/mesures` — le TLS protège le transport, l'AES protège le message de bout en bout.
 - **Patient** : demandé **en début de test** via une **liste prédéfinie** (`PATIENT_LIST` dans `config.h`), servie par `GET /api/patients`, sélection obligatoire dans l'interface web avant le test.

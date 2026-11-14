@@ -18,6 +18,7 @@
 #include "procedure.h"
 #include "web_server.h"
 #include "mqtt_link.h"
+#include "provision.h"
 
 void setup() {
   Serial.begin(115200);
@@ -39,12 +40,19 @@ void setup() {
   // Systeme de fichiers (interface web + jsPDF)
   if (!LittleFS.begin(true)) Serial.println("[BANC] LittleFS: formatage/montage");
 
-  // WiFi : le banc cree son propre reseau (mode AP)
-  WiFi.softAP(AP_SSID, AP_PASSWORD);
+  // Reseau : AP d'interface toujours actif ; STA automatique si config NVS
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(AP_SSID, AP_PASSWORD);            // AP : interface web (192.168.4.1)
   Serial.print("[BANC] WiFi AP ");
   Serial.print(AP_SSID);
   Serial.print(" - IP ");
   Serial.println(WiFi.softAPIP());
+  if (provHasConfig()) {                        // reseau sauvegarde dans la NVS
+    provApplySta();                             // IP fixe + connexion automatique
+    Serial.printf("[BANC] STA auto : %s\n", provSsid().c_str());
+  } else {
+    Serial.println("[BANC] Pas de config NVS : mode AP de configuration");
+  }
 
   // Tache d'acquisition sur le coeur 0 (moteur + ABP 100 Hz)
   startAcquisitionTask();

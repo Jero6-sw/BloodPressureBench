@@ -251,7 +251,7 @@ Watch out: TMC2209 logic at 3V3; single common ground for all parts. Solenoid-va
 
 ## 7. Software — ESP32_Software
 
-The ESP32 hosts a **local web interface** (the bench creates its own WiFi network `Banc-Tensiometre`, password `Banc10ans!`). Four functions:
+The ESP32 hosts a **local web interface**. On **first boot** the bench creates its own WiFi network `Banc-Tensiometre` (password `Banc10ans!`): the UI lets you enter the **home network and static IP**, saved to **NVS** — subsequent boots **automatically connect** to the saved network (AP kept as a fallback). Four functions:
 
 1. **Real-time status**: current pressure, amplitude and shape of the last pulse, motor/valve state.
 2. **Step-by-step self-calibration procedure** (§ 8 a): the bench runs the automatic part and **requests user approval for every manual gesture** (S1-S4 positions, chuck, cuff) — the motor is blocked until confirmation.
@@ -267,6 +267,8 @@ ESP32_Software/
 ├── peripherals.h/.cpp       # Device management: ABP sensor, motor, valve, 100 Hz acquisition
 ├── procedure.h/.cpp         # Procedure engine: self-diagnostic and test steps
 ├── valves.h/.cpp           # Solenoid valves (variant § 3 f): configuration matrix, isolation self-test
+├── mqtt_link.h/.cpp      # MQTT TLS 8883 + AES-256-GCM measurement encryption
+├── provision.h/.cpp      # NVS: WiFi credentials + static IP, automatic reconnection
 ├── web_server.h/.cpp        # Web server: REST API, static files
 └── www/
     ├── index.html           # Web UI (status, approval modals, form)
@@ -321,7 +323,8 @@ Sessions 3-6 months apart, same temperature ±2 °C:
 ---
 ### 8 d/ MQTT storage and measurement encryption
 
-- **Broker**: MQTT over **TLS 8883** (Mosquitto on a Raspberry/NAS, ~€0-50). The bench joins as STA in addition to its AP (`MQTT_STA_SSID` in `config.h`; `"CHANGE"` = module disabled, standalone bench).
+- **Network — first commissioning (NVS)**: on first boot the bench creates its AP `Banc-Tensiometre` (192.168.4.1); the UI lets you enter **SSID, password and static IP**, saved to **NVS** (`provision.h/.cpp`, Preferences). Subsequent boots: **automatic reconnection** to the saved network whenever available, AP kept as a fallback for the UI. A button in the interface ("Réseau & configuration (NVS)") allows **reconfiguring or clearing** the NVS (back to AP mode).
+- **Broker**: MQTT over **TLS 8883** (Mosquitto on a Raspberry/NAS, ~€0-50). The bench joins as STA via the NVS; no network configured = module disabled (standalone bench on AP).
 - **Calibration measurements**: published as JSON on `banc/tensiometre/calib` (zero, gain, leaks, V_boyle, levels, temperature, operator) — transport protected by TLS (pinned CA).
 - **Blood-pressure measurements**: payload **encrypted with AES-256-GCM** (key in NVS, random IV per message, base64 `IV:ciphertext:TAG`) on `banc/tensiometre/mesures` — TLS protects the transport, AES protects the message end to end.
 - **Patient**: asked **at test start** from a **predefined list** (`PATIENT_LIST` in `config.h`), served by `GET /api/patients`, mandatory selection in the web UI before the test.

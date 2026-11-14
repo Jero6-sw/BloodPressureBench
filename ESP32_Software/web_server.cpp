@@ -3,6 +3,7 @@
 #include "peripherals.h"
 #include "procedure.h"
 #include "mqtt_link.h"
+#include "provision.h"
 
 #include <WiFi.h>
 #include <WebServer.h>
@@ -107,6 +108,36 @@ void handlePublish() {
   server.send(200, "application/json", r);
 }
 
+// ---------- POST /api/wifi : configuration reseau -> NVS, puis redemarrage ----------
+void handleWifiConfig() {
+  StaticJsonDocument<384> d;
+  deserializeJson(d, server.arg("plain"));
+  provSave(d["ssid"] | "", d["pass"] | "", d["ip"] | "", d["gw"] | "", d["mask"] | "255.255.255.0");
+  server.send(200, "application/json", "{\"saved\":true,\"reboot\":true}");
+  delay(500);
+  ESP.restart();
+}
+
+// ---------- GET /api/config : configuration NVS en cours (sans mot de passe) ----------
+void handleGetConfig() {
+  StaticJsonDocument<256> d;
+  d["configured"] = provHasConfig();
+  if (provHasConfig()) {
+    ProvCfg c = provLoad();
+    d["ssid"] = c.ssid; d["ip"] = c.ip; d["gw"] = c.gw; d["mask"] = c.mask;
+  }
+  String o; serializeJson(d, o);
+  server.send(200, "application/json", o);
+}
+
+// ---------- POST /api/reset : efface la NVS reseau et redemarre en mode AP ----------
+void handleResetConfig() {
+  provClear();
+  server.send(200, "application/json", "{\"cleared\":true,\"reboot\":true}");
+  delay(500);
+  ESP.restart();
+}
+
 void setupServer() {
   mqttSetup();
   server.on("/api/status",  HTTP_GET,  sendJson);
@@ -116,6 +147,9 @@ void setupServer() {
   server.on("/api/value",   HTTP_POST, handleValue);
   server.on("/api/patients", HTTP_GET,  handlePatients);
   server.on("/api/publish",  HTTP_POST, handlePublish);
+  server.on("/api/wifi",    HTTP_POST, handleWifiConfig);    // NVS : reseau + IP fixe
+  server.on("/api/config",  HTTP_GET,  handleGetConfig);     // NVS : lecture (sans passe)
+  server.on("/api/reset",   HTTP_POST, handleResetConfig);   // NVS : effacement -> AP
   server.serveStatic("/", LittleFS, "/www/");   // page web + jsPDF stockes en flash
   server.begin();
 }

@@ -1,6 +1,7 @@
 #include "mqtt_link.h"
 #include "config.h"
 #include "peripherals.h"
+#include "provision.h"
 
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -30,10 +31,8 @@ static String encryptAesGcm(const char* plain, size_t len) {
 
 // ---------- Connexion ----------
 void mqttSetup() {
-  if (strstr(MQTT_STA_SSID, "CHANGE") != nullptr) return;   // MQTT desactive
-  mqttActive = true;
-  WiFi.mode(WIFI_AP_STA);                     // AP (interface) + STA (broker)
-  WiFi.begin(MQTT_STA_SSID, MQTT_STA_PASS);
+  if (!provHasConfig()) return;               // pas de reseau NVS => MQTT inactif
+  mqttActive = true;                          // STA gere par provision (setup du .ino)
   if (strlen(MQTT_CA_CERT) > 0) tlsClient.setCACert(MQTT_CA_CERT);  // CA epingle
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
 }
