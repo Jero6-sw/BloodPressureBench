@@ -1,3 +1,4 @@
+
 #include "mqtt_link.h"
 #include "config.h"
 #include "peripherals.h"
@@ -48,7 +49,14 @@ void mqttSetup() {
     Serial.println("[MQTT] Cle AES absente ou trop courte : MQTT inactif");
     return;
   }
-  if (BPB_caPem.length() > 0) BPB_tlsClient.setCACert(BPB_caPem.c_str());  // CA epingle
+  if (BPB_caPem.length() > 0) {              // CA epingle (verifie : PEM invalide = cause frequente)
+    if (!BPB_tlsClient.setCACert(BPB_caPem.c_str())) {
+      Serial.println("[MQTT] ERREUR : CA PEM invalide (coller le bloc BEGIN/END CERTIFICATE complet de ca.crt)");
+      return;
+    }
+  } else {
+    Serial.println("[MQTT] AVERTISSEMENT : aucun CA epingle -> le broker TLS refusera probablement la session");
+  }
   BPB_mqtt.setServer(BPB_mqttHost.c_str(), MQTT_PORT);
   mqttActive = true;                          // STA gere par provision (setup du .ino)
   Serial.printf("[MQTT] Actif : %s:%d (CA %s, cle AES OK)\n",
@@ -61,7 +69,11 @@ bool mqttEnsureConnected() {
   if (BPB_lastConnMs != 0 && millis() - BPB_lastConnMs < 2000) return false;  // pas de spam TLS
   BPB_lastConnMs = millis();
   bool ok = BPB_mqtt.connect("banc-tensiometre");
-  Serial.printf("[MQTT] Connexion %s\n", ok ? "OK" : "ECHOUEE (IP broker ? CA TLS ? listener 8883 ?)");
+  if (ok) { Serial.println("[MQTT] Connexion OK"); return true; }
+  // state PubSubClient : -4 = timeout TCP/TLS, -2 = CONNECT refuse (auth),
+  // -1 = deconnecte, 1..5 = codes CONNACK broker (1 = protocole, 4/5 = auth).
+  Serial.printf("[MQTT] Echec, state=%d : -4=TCP/TLS (listener 8883 ? firewall ? SAN=IP broker ? CA ?) -2/5=auth Mosquitto\n",
+                BPB_mqtt.state());
   return ok;
 }
 
