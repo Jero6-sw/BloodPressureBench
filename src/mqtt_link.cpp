@@ -1,5 +1,3 @@
-
-
 #include "mqtt_link.h"
 #include "config.h"
 #include "peripherals.h"
@@ -18,6 +16,11 @@ static bool             mqttActive = false;
 
 // Config effective : NVS si renseignee, sinon repli config.h
 static String BPB_mqttHost, BPB_caPem, BPB_aesKey;
+
+// Anti-饱和 : la poignee de main TLS est bloquante, on ne retente pas
+// en boucle serrée (sinon le serveur web parait mort).
+static uint32_t BPB_lastConnMs = 0;
+static const uint32_t CONN_RETRY_MS = 5000;   // boucle : toutes les 5 s
 
 // ---------- Chiffrement AES-256-GCM du payload mesures ----------
 // Sortie base64( IV(12) || chiffre || TAG(16) ). Cle : NVS (provision).
@@ -48,12 +51,33 @@ void mqttSetup() {
   if (BPB_caPem.length() > 0) BPB_tlsClient.setCACert(BPB_caPem.c_str());  // CA epingle
   BPB_mqtt.setServer(BPB_mqttHost.c_str(), MQTT_PORT);
   mqttActive = true;                          // STA gere par provision (setup du .ino)
+  Serial.printf("[MQTT] Actif : %s:%d (CA %s, cle AES OK)\n",
+                BPB_mqttHost.c_str(), MQTT_PORT, BPB_caPem.length() ? "epingle" : "ABSENT");
+}
+
+bool mqttEnsureConnected() {
+  if (!mqttActive || WiFi.status() != WL_CONNECTED) return false;
+  if (BPB_mqtt.connected()) return true;
+  if (BPB_lastConnMs != 0 && millis() - BPB_lastConnMs < 2000) return false;  // pas de spam TLS
+  BPB_lastConnMs = millis();
+  bool ok = BPB_mqtt.connect("banc-tensiometre");
+  Serial.printf("[MQTT] Connexion %s\n", ok ? "OK" : "ECHOUEE (IP broker ? CA TLS ? listener 8883 ?)");
+  return ok;
 }
 
 void mqttLoop() {
   if (!mqttActive || WiFi.status() != WL_CONNECTED) return;
-  if (!BPB_mqtt.connected()) BPB_mqtt.connect("banc-tensiometre");
-  else BPB_mqtt.loop();
+  if (!BPB_mqtt.connected()) {
+    if (millis() - BPB_lastConnMs >= CONN_RETRY_MS) mqttEnsureConnected();   // cadence 5 s
+  } else BPB_mqtt.loop();
+}
+
+// Diagnostic lisible pour l'interface (reponse /api/publish)
+const char* mqttStatus() {
+  if (!mqttActive)                return "MQTT inactif : reseau non configure en NVS, ou cle AES absente/trop courte (<32)";
+  if (WiFi.status() != WL_CONNECTED) return "WiFi STA non connecte (voir config NVS / portee du reseau)";
+  if (!BPB_mqtt.connected())      return "Non connecte au broker : verifier IP broker, listener TLS 8883 et CA epingle";
+  return "Connecte au broker";
 }
 
 // ---------- Publication des mesures d'etalonnage ----------

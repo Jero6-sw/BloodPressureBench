@@ -3,6 +3,7 @@
 
 
 
+
 #include "web_server.h"
 #include "config.h"
 #include "peripherals.h"
@@ -107,9 +108,12 @@ void handlePatients() {
 
 // ---------- POST /api/publish : publication MQTT (etalonnage + mesures chiffrees) ----------
 void handlePublish() {
-  bool okCalib   = mqttPublishCalib();      // noms explicites (pas de c/m jetables)
+  mqttEnsureConnected();                       // tente la connexion au broker si besoin
+  bool okCalib   = mqttPublishCalib();
   bool okMesures = mqttPublishMeasures();
-  String r = "{\"calib\":" + String(okCalib ? "true" : "false") + ",\"mesures\":" + String(okMesures ? "true" : "false") + "}";
+  String r = "{\"calib\":" + String(okCalib ? "true" : "false") +
+             ",\"mesures\":" + String(okMesures ? "true" : "false") +
+             ",\"detail\":\"" + mqttStatus() + "\"}";
   BPB_WebServer.send(200, "application/json", r);
 }
 

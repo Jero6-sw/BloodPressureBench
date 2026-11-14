@@ -9,7 +9,9 @@
 // valeurs de repli. MQTT inactif si aucun reseau n'est configure en NVS.
 
 void mqttSetup();                   // CA epingle + serveur broker (appelee par setupServer)
-void mqttLoop();                    // keepalive + reconnexion (a appeler dans loop())
+void mqttLoop();                    // keepalive + reconnexion cadencee (a appeler dans loop())
+bool mqttEnsureConnected();         // tente une connexion si besoin (bouton Publier)
+const char* mqttStatus();           // diagnostic lisible (inactif / WiFi / broker)
 bool mqttPublishCalib();            // mesures d'etalonnage de la session
 bool mqttPublishMeasures();         // mesures de tension chiffrees + patient
 

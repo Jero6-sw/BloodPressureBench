@@ -1,4 +1,5 @@
 
+
 #ifndef PROCEDURE_H
 #define PROCEDURE_H
 
@@ -21,6 +22,7 @@ extern const int   N_CALIB, N_TESTS;
 
 void procedureStart(const BPB_Step* tbl, int len);  // debut de sequence
 void procedureAdvance();                         // approbation recue -> etape suivante
-void procedureRunAuto(int idx);                  // partie automatique de l'etape idx
+void procedureRunAuto(int idx);                  // lancement de l'etape auto idx (phase 1)
+void procedureTick();                           // avance l'etape auto en cours (NON bloquant, a appeler dans loop())
 
 #endif

@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -36,16 +37,25 @@
   </div>
 </div>
 
-<div class="card">
+<div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:stretch">
+<div class="card" style="flex:1 1 300px;margin-bottom:0">
   <h2>Patient (à sélectionner en début de test)</h2>
   <label>Liste prédéfinie (config.h)
     <select id="f_patient"></select>
   </label>
   <div class="k" style="font-size:.75rem;color:#777">Le nom est enregistré avec les mesures ; l'envoi des mesures de tension est chiffré (AES-256-GCM sur MQTT TLS).</div>
 </div>
+<div class="card" style="flex:1 1 300px;margin-bottom:0">
+  <h2>Procédures</h2>
+  <button onclick="start('calib')">Auto-diagnostic (avant chaque session)</button>
+  <button class="sec" onclick="start('test')">Test (5 mesures)</button>
+  <div class="k" style="font-size:.75rem;color:#777;margin-top:.5rem">Les étapes automatiques s'exécutent sans bloquer le banc : le statut reste actualisé pendant les mesures de 60 s.</div>
+</div>
+</div>
 
-<div class="card">
-  <h2>Réseau & configuration (NVS)</h2>
+<details class="card">
+  <summary style="cursor:pointer;font-weight:600">⚙ Réseau & configuration (NVS) — cliquer pour déplier</summary>
+  <h2 style="font-size:1rem">Réseau & configuration (NVS)</h2>
   <div class="k" style="font-size:.75rem;color:#777">Première mise en route : le banc est en mode AP <b>Banc-Tensiometre</b> (192.168.4.1) — renseignez le réseau WiFi, l'IP fixe, le broker MQTT, le CA TLS et la clé AES ; tout est sauvegardé en NVS. Dès qu'un réseau est configuré et joignable, <b>l'AP est coupé</b> (réactivé en secours si le réseau est introuvable).</div>
   <div class="row" style="margin-top:.6rem">
     <label>SSID <input id="f_ssid"></label>
@@ -70,13 +80,7 @@
   <div class="row" style="margin-top:.4rem">
     <button class="sec" onclick="saveMqtt()">Enregistrer la config MQTT dans la NVS et redémarrer</button>
   </div>
-</div>
-
-<div class="card">
-  <h2>Procédures</h2>
-  <button onclick="start('calib')">Auto-diagnostic (avant chaque session)</button>
-  <button class="sec" onclick="start('test')">Test (5 mesures)</button>
-</div>
+</details>
 
 <div class="card">
   <h2>Rapport de session</h2>
@@ -163,8 +167,9 @@ async function loadPatients() {
   } catch (e) {}
 }
 async function publishMqtt() {
-  await fetch('/api/publish', { method: 'POST' });
-  alert('Publication MQTT demandée (voir réponse /api/publish).');
+  const r = await (await fetch('/api/publish', { method: 'POST' })).json();
+  var msg = 'Étalonnage : ' + (r.calib ? 'OK' : 'ÉCHEC') + '\nMesures (chiffrées) : ' + (r.mesures ? 'OK' : 'ÉCHEC') + '\n\n' + r.detail;
+  alert(msg);
 }
 async function loadNetConfig() {
   try {

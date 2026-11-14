@@ -1,6 +1,7 @@
 
 
 
+
 /*
  * Banc de test - derive d'un ensemble tensiometre + brassard
  * Firmware ESP32-WROOM-32 - voir README_FR.md / README_EN.md a la racine du depot.
@@ -88,6 +89,7 @@ void setup() {
 
 void loop() {
   BPB_WebServer.handleClient();
+  procedureTick();   // etapes automatiques non bloquantes (jamais de delay/while ici)
   manageNetwork();   // secours : reactiver l'AP si le STA reste injoignable
   mqttLoop();        // MQTT TLS : keepalive + reconnexion
 }

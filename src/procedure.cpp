@@ -1,5 +1,3 @@
-
-
 #include "procedure.h"
 #include "config.h"
 
@@ -30,10 +28,27 @@ static const BPB_Step* curTable = nullptr;
 static int             curLen   = 0;
 
 static const BPB_Step* getStep(int i) { return (curTable && i < curLen) ? &curTable[i] : nullptr; }
-static int             getStepCount() { return curLen; }
+
+// ---------- Partie automatique : MACHINE A ETATS NON BLOQUANTE ----------
+// Aucun delay()/while bloquant : procedureTick() (appele dans loop()) fait
+// avancer les phases. Le serveur web et l'interface restent reactifs pendant
+// les mesures de 60 s, et un capteur absent ne fige plus l'ESP32.
+// Phases : 0 = rien a faire ; 1/2 = sous-phases de l'etape auto en cours.
+static uint32_t autoT0    = 0;    // debut de la sous-phase
+static float    autoP0    = 0;    // pression de reference (pentes de fuite)
+static char     autoPhase = 0;
+
+static void autoFinish(const char* msg) {
+  motorRun(false);                 // etat de securite systematique
+  valveSet(false);
+  strlcpy(BPB_BenchState.approvalMsg, msg, sizeof(BPB_BenchState.approvalMsg));
+  BPB_BenchState.waitingApproval = true;   // l'operateur valide le resultat
+  autoPhase = 0;
+}
 
 void procedureStart(const BPB_Step* tbl, int len) {
   curTable = tbl; curLen = len; BPB_BenchState.step = 0;
+  autoPhase = 0;
   procedureRunAuto(0);
 }
 
@@ -44,54 +59,93 @@ void procedureAdvance() {
   procedureRunAuto(BPB_BenchState.step);
 }
 
-// ---------- Partie automatique des etapes ----------
-// NOTE : les attentes ci-dessous sont ecrites de facon lisible (boucles + delay)
-// pour la lisibilite. En production, les implementer comme machine a etats
-// non bloquante (meme modele que acquisitionTask) afin que le serveur web
-// reste reactif pendant les mesures de 60 s.
+// Lance l'etape automatique idx : initialise la phase 1 (actions instantanees
+// uniquement), la suite est pilotee par procedureTick().
 void procedureRunAuto(int idx) {
   const BPB_Step* st = getStep(idx);
   if (!st) return;
   strlcpy(BPB_BenchState.approvalMsg, st->instr, sizeof(BPB_BenchState.approvalMsg));
   if (st->type == 'M') { BPB_BenchState.waitingApproval = true; return; }   // l'operateur doit confirmer
 
-  // --- actions automatiques ---
-  if (curTable == CALIB) {
-    switch (idx) {
-      case 1:  // gonflage a 100 mmHg
-        motorRun(true);
-        while (BPB_BenchState.pressure < P_TARGET_MMHG - P_TOLERANCE_MMHG) delay(5);
-        motorRun(false);
-        break;
-      case 3:  // etancheite banc seul : montee a 150 mmHg puis pente 60 s
-        motorRun(true);
-        while (BPB_BenchState.pressure < P_LEAKTEST_MMHG - 0.5f) delay(5);
-        motorRun(false);
-        {
-          float p0 = BPB_BenchState.pressure;
-          delay(60000);
-          BPB_BenchState.leakSlope = BPB_BenchState.pressure - p0;          // mmHg/min (seuil : < 1)
-        }
-        break;
-      case 4:  // etancheite bras seul : pente 60 s (S1 45 deg + S3 ouvert cote operateur)
-        {
-          float p0 = BPB_BenchState.pressure;
-          delay(60000);
-          BPB_BenchState.leakSlopeArm = BPB_BenchState.pressure - p0;
-        }
-        break;
-      case 5:  // zero a l'air libre : purge ouverte, capture de l'offset ABP (etape 1 du departage)
-        valveSet(true);                        // purge ouverte -> pression atmospherique
-        delay(3000);                           // stabilisation
-        BPB_BenchState.zeroOffset = BPB_BenchState.pressure;             // offset electronique direct (mmHg), mesure absolue
-        valveSet(false);                       // l'operateur verifie l'ovale zero de l'aneroide puis valide
-        break;
-      case 8:  // amplitude + forme sur 4 s de pulsation
-        motorRun(true);
-        delay(4000);
-        motorRun(false);
-        break;
-    }
+  if (curTable != CALIB) { BPB_BenchState.waitingApproval = true; return; }
+  autoT0 = millis();
+  autoPhase = 1;
+  switch (idx) {
+    case 1:                                   // gonflage a 100 mmHg
+    case 3:                                   // montee a 150 mmHg puis pente
+      if (!BPB_BenchState.abpOk) {            // capteur absent : pas de boucle infinie
+        autoFinish("Capteur ABP absent : etape d'etonnage/gonflage annulee (brancher le capteur puis relancer la procedure).");
+        return;
+      }
+      motorRun(true);
+      break;
+    case 4:                                   // pente bras seul : reference immediatement
+      autoP0 = BPB_BenchState.pressure;
+      break;
+    case 5:                                   // zero a l'air libre : purge ouverte 3 s
+      valveSet(true);
+      break;
+    case 8:                                   // pulsation 4 s
+      motorRun(true);
+      break;
+    default:                                  // etape auto sans action temporisee
+      autoPhase = 0;
+      BPB_BenchState.waitingApproval = true;
+      break;
   }
-  BPB_BenchState.waitingApproval = true;   // l'operateur valide le resultat de l'action auto
+}
+
+// Avance l'etape automatique en cours (a appeler dans loop(), jamais dans
+// une tache SPI/I2C). Gerer les depassements de delai -> jamais de blocage.
+void procedureTick() {
+  if (autoPhase == 0 || curTable != CALIB) return;
+  int      idx = BPB_BenchState.step;
+  uint32_t dT  = millis() - autoT0;
+
+  switch (idx) {
+    case 1:   // gonflage : arret a 100 +/- 2 mmHg, echec a 120 s
+      if (BPB_BenchState.pressure >= P_TARGET_MMHG - P_TOLERANCE_MMHG)
+        autoFinish("Gonflage termine a la cible (100 mmHg). Verifier P_int puis valider.");
+      else if (dT > 120000UL)
+        autoFinish("ECHEC gonflage : cible non atteinte en 120 s (fuite ? moteur ?). Verifier puis valider.");
+      break;
+
+    case 3:   // etancheite banc : montee a 150 puis pente 60 s
+      if (autoPhase == 1) {
+        if (BPB_BenchState.pressure >= P_LEAKTEST_MMHG - 0.5f) {
+          motorRun(false);
+          autoP0 = BPB_BenchState.pressure;
+          autoT0 = millis();
+          autoPhase = 2;
+        } else if (dT > 120000UL) {
+          autoFinish("ECHEC : 150 mmHg non atteints en 120 s (fuite ?). Verifier puis valider.");
+        }
+      } else if (autoPhase == 2 && dT >= 60000UL) {
+        BPB_BenchState.leakSlope = BPB_BenchState.pressure - autoP0;   // mmHg/min
+        autoFinish("Pente banc mesuree (voir statut). Seuil < 1 mmHg/min - verifier puis valider.");
+      }
+      break;
+
+    case 4:   // etancheite bras seul : pente 60 s
+      if (autoPhase == 1) {                   // reference prise au lancement
+        autoT0 = millis();
+        autoPhase = 2;
+      } else if (autoPhase == 2 && dT >= 60000UL) {
+        BPB_BenchState.leakSlopeArm = BPB_BenchState.pressure - autoP0;
+        autoFinish("Pente bras mesuree (voir statut). Seuil < 1 mmHg/min - verifier puis valider.");
+      }
+      break;
+
+    case 5:   // zero : capture apres 3 s de purge ouverte
+      if (autoPhase == 1 && dT >= 3000UL) {
+        BPB_BenchState.zeroOffset = BPB_BenchState.pressure;   // offset electronique (mmHg)
+        autoFinish("Zero ABP capture. Verifier l'aiguille aneroide dans l'ovale zero puis valider.");
+      }
+      break;
+
+    case 8:   // amplitude + forme : 4 s de pulsation
+      if (dT >= 4000UL)
+        autoFinish("Amplitude et forme relevees (voir carte statut). Ajuster la butee si hors cible puis valider.");
+      break;
+  }
 }
