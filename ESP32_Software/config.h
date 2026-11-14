@@ -1,8 +1,9 @@
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
 // ---------- Identification ----------
-#define FW_VERSION   "1.5.0-banc"
+#define FW_VERSION   "1.5.1-banc"
 
 // ---------- Capteur ABP (Honeywell ABPDRRV040MG2A3, 0-40 kPa, I2C) ----------
 #define ABP_ADDR     0x28

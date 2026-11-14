@@ -1,3 +1,4 @@
+
 #ifndef PERIPHERALS_H
 #define PERIPHERALS_H
 
@@ -24,7 +25,7 @@ struct BenchState {
   char  patientName[32] = "";               // patient selectionne en debut de test (liste predefinie config.h)
 };
 
-extern BenchState S;
+extern BenchState BPB_S;   // prefixe BPB_ : etat global propre au projet
 
 // ---------- Capteur ABP ----------
 float readPressureMMHg();             // lecture I2C brute convertie en mmHg

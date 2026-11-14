@@ -1,4 +1,5 @@
 
+
 #include "web_server.h"
 #include "config.h"
 #include "peripherals.h"
@@ -11,83 +12,83 @@
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 
-WebServer server(80);
+WebServer BPB_WebServer(80);   // definition ; declaree dans web_server.h
 
 // ---------- GET /api/status : statut temps reel (poll par index.html) ----------
 void sendJson() {
   StaticJsonDocument<1024> d;
   d["version"] = FW_VERSION;
-  d["abp"] = S.abpOk;
-  d["pressure"] = S.pressure;
-  d["amp"] = S.amp;
-  d["ratio"] = S.ratio;
-  d["motor"] = S.motorOn;
-  d["valve"] = S.valveOpen;
-  d["step"] = S.step;
-  d["approval"] = S.waitingApproval;
-  d["approvalMsg"] = S.approvalMsg;
+  d["abp"] = BPB_S.abpOk;
+  d["pressure"] = BPB_S.pressure;
+  d["amp"] = BPB_S.amp;
+  d["ratio"] = BPB_S.ratio;
+  d["motor"] = BPB_S.motorOn;
+  d["valve"] = BPB_S.valveOpen;
+  d["step"] = BPB_S.step;
+  d["approval"] = BPB_S.waitingApproval;
+  d["approvalMsg"] = BPB_S.approvalMsg;
   String o;
   serializeJson(d, o);
-  server.send(200, "application/json", o);
+  BPB_WebServer.send(200, "application/json", o);
 }
 
 // ---------- POST /api/value : saisies operateur (formulaire du rapport) ----------
 void handleValue() {
   StaticJsonDocument<256> d;
-  deserializeJson(d, server.arg("plain"));
+  deserializeJson(d, BPB_WebServer.arg("plain"));
   const char* k = d["key"] | "";
   float v = d["value"] | 0.0f;
-  if      (!strcmp(k, "mano"))    S.pReads[d["idx"] | 0] = v;
-  else if (!strcmp(k, "display")) S.displayed[d["idx"] | 0] = v;
-  else if (!strcmp(k, "temp"))    S.tempC = v;
+  if      (!strcmp(k, "mano"))    BPB_S.pReads[d["idx"] | 0] = v;
+  else if (!strcmp(k, "display")) BPB_S.displayed[d["idx"] | 0] = v;
+  else if (!strcmp(k, "temp"))    BPB_S.tempC = v;
   else if (!strcmp(k, "boyle")) {
-    S.boyleV = (760.0f + S.pressure) * 10.0f / (v != 0 ? v : 1);       // V = P_abs * dV / dP
-    float dPexp = (760.0f + S.pressure) * 10.0f / (S.boyleV - 10.0f);  // etape 2 departage : gain attendu
-    S.gainErrPct = (dPexp > 0.1f) ? (v - dPexp) / dPexp * 100.0f : 0;   // > ~1,5 mmHg a 100 mmHg => derive electronique
+    BPB_S.boyleV = (760.0f + BPB_S.pressure) * 10.0f / (v != 0 ? v : 1);       // V = P_abs * dV / dP
+    float dPexp = (760.0f + BPB_S.pressure) * 10.0f / (BPB_S.boyleV - 10.0f);  // etape 2 departage : gain attendu
+    BPB_S.gainErrPct = (dPexp > 0.1f) ? (v - dPexp) / dPexp * 100.0f : 0;   // > ~1,5 mmHg a 100 mmHg => derive electronique
   }
-  else if (!strcmp(k, "operator"))strlcpy(S.operatorName, d["value"] | "", sizeof(S.operatorName));
-  else if (!strcmp(k, "sn"))      strlcpy(S.deviceSN, d["value"] | "", sizeof(S.deviceSN));
-  else if (!strcmp(k, "fwdev"))   strlcpy(S.fwDevice, d["value"] | "", sizeof(S.fwDevice));
-  else if (!strcmp(k, "patient")) strlcpy(S.patientName, d["value"] | "", sizeof(S.patientName));
-  server.send(200, "application/json", "{}");
+  else if (!strcmp(k, "operator"))strlcpy(BPB_S.operatorName, d["value"] | "", sizeof(BPB_S.operatorName));
+  else if (!strcmp(k, "sn"))      strlcpy(BPB_S.deviceSN, d["value"] | "", sizeof(BPB_S.deviceSN));
+  else if (!strcmp(k, "fwdev"))   strlcpy(BPB_S.fwDevice, d["value"] | "", sizeof(BPB_S.fwDevice));
+  else if (!strcmp(k, "patient")) strlcpy(BPB_S.patientName, d["value"] | "", sizeof(BPB_S.patientName));
+  BPB_WebServer.send(200, "application/json", "{}");
 }
 
 // ---------- GET /api/report : JSON de session -> PDF genere par le navigateur ----------
 void handleReport() {
   StaticJsonDocument<2048> d;
   d["version"] = FW_VERSION;
-  d["pressure"] = S.pressure;
-  d["leakSlope"] = S.leakSlope;
-  d["leakSlopeArm"] = S.leakSlopeArm;
-  d["boyleV"] = S.boyleV;
+  d["pressure"] = BPB_S.pressure;
+  d["leakSlope"] = BPB_S.leakSlope;
+  d["leakSlopeArm"] = BPB_S.leakSlopeArm;
+  d["boyleV"] = BPB_S.boyleV;
   JsonArray pr = d.createNestedArray("pReads");
-  for (float x : S.pReads) pr.add(x);
+  for (float x : BPB_S.pReads) pr.add(x);
   JsonArray dp = d.createNestedArray("displayed");
-  for (float x : S.displayed) dp.add(x);
-  d["tempC"] = S.tempC;
-  d["operator"] = S.operatorName;
-  d["deviceSN"] = S.deviceSN;
-  d["fwDevice"] = S.fwDevice;
-  d["zeroOffset"] = S.zeroOffset;
-  d["gainErrPct"] = S.gainErrPct;
-  d["patient"] = S.patientName;
+  for (float x : BPB_S.displayed) dp.add(x);
+  d["tempC"] = BPB_S.tempC;
+  d["operator"] = BPB_S.operatorName;
+  d["deviceSN"] = BPB_S.deviceSN;
+  d["fwDevice"] = BPB_S.fwDevice;
+  d["zeroOffset"] = BPB_S.zeroOffset;
+  d["gainErrPct"] = BPB_S.gainErrPct;
+  d["patient"] = BPB_S.patientName;
   String o;
   serializeJson(d, o);
-  server.send(200, "application/json", o);
+  BPB_WebServer.send(200, "application/json", o);
 }
 
 // ---------- Endpoints de procedure ----------
 void handleStart() {
-  String which = server.arg("procedure");
+  String which = BPB_WebServer.arg("procedure");
   if (which == "test") procedureStart(TESTS, N_TESTS);
   else                 procedureStart(CALIB, N_CALIB);
-  server.send(200, "application/json", "{}");
+  BPB_WebServer.send(200, "application/json", "{}");
 }
 
 void handleApprove() {
-  S.waitingApproval = false;
+  BPB_S.waitingApproval = false;
   procedureAdvance();
-  server.send(200, "application/json", "{}");
+  BPB_WebServer.send(200, "application/json", "{}");
 }
 
 // ---------- GET /api/patients : liste predefinie (config.h PATIENT_LIST) ----------
@@ -98,7 +99,7 @@ void handlePatients() {
   strlcpy(buf, PATIENT_LIST, sizeof(buf));
   for (char* p = strtok(buf, "\n"); p; p = strtok(nullptr, "\n")) a.add(p);
   String o; serializeJson(d, o);
-  server.send(200, "application/json", o);
+  BPB_WebServer.send(200, "application/json", o);
 }
 
 // ---------- POST /api/publish : publication MQTT (etalonnage + mesures chiffrees) ----------
@@ -106,15 +107,15 @@ void handlePublish() {
   bool c = mqttPublishCalib();
   bool m = mqttPublishMeasures();
   String r = "{\"calib\":" + String(c ? "true" : "false") + ",\"mesures\":" + String(m ? "true" : "false") + "}";
-  server.send(200, "application/json", r);
+  BPB_WebServer.send(200, "application/json", r);
 }
 
 // ---------- POST /api/wifi : configuration reseau -> NVS, puis redemarrage ----------
 void handleWifiConfig() {
   StaticJsonDocument<384> d;
-  deserializeJson(d, server.arg("plain"));
+  deserializeJson(d, BPB_WebServer.arg("plain"));
   provSave(d["ssid"] | "", d["pass"] | "", d["ip"] | "", d["gw"] | "", d["mask"] | "255.255.255.0");
-  server.send(200, "application/json", "{\"saved\":true,\"reboot\":true}");
+  BPB_WebServer.send(200, "application/json", "{\"saved\":true,\"reboot\":true}");
   delay(500);
   ESP.restart();
 }
@@ -131,20 +132,20 @@ void handleGetConfig() {
   d["caSet"]   = c.caPem.length()  > 0;       // CA TLS present en NVS (non renvoye)
   d["aesSet"]  = c.aesKey.length() > 0;       // cle AES presente en NVS (non renvoyee)
   String o; serializeJson(d, o);
-  server.send(200, "application/json", o);
+  BPB_WebServer.send(200, "application/json", o);
 }
 
 // ---------- POST /api/mqtt : broker + CA TLS + cle AES -> NVS, puis redemarrage ----------
 // Champs laisses vides = valeurs NVS conservees (pas de re-saisie du PEM/cle).
 void handleMqttConfig() {
   StaticJsonDocument<4096> d;
-  deserializeJson(d, server.arg("plain"));
+  deserializeJson(d, BPB_WebServer.arg("plain"));
   ProvCfg cur = provLoad();
   String host = d["host"] | ""; if (!host.length()) host = cur.mqttHost;
   String ca   = d["ca"]   | ""; if (!ca.length())   ca   = cur.caPem;
   String aes  = d["aes"]  | ""; if (!aes.length())  aes  = cur.aesKey;
   provSaveMqtt(host.c_str(), ca.c_str(), aes.c_str());
-  server.send(200, "application/json", "{\"saved\":true,\"reboot\":true}");
+  BPB_WebServer.send(200, "application/json", "{\"saved\":true,\"reboot\":true}");
   delay(500);
   ESP.restart();
 }
@@ -152,24 +153,24 @@ void handleMqttConfig() {
 // ---------- POST /api/reset : efface la NVS reseau et redemarre en mode AP ----------
 void handleResetConfig() {
   provClear();
-  server.send(200, "application/json", "{\"cleared\":true,\"reboot\":true}");
+  BPB_WebServer.send(200, "application/json", "{\"cleared\":true,\"reboot\":true}");
   delay(500);
   ESP.restart();
 }
 
 void setupServer() {
   mqttSetup();
-  server.on("/api/status",  HTTP_GET,  sendJson);
-  server.on("/api/report",  HTTP_GET,  handleReport);
-  server.on("/api/start",   HTTP_POST, handleStart);
-  server.on("/api/approve", HTTP_POST, handleApprove);
-  server.on("/api/value",   HTTP_POST, handleValue);
-  server.on("/api/patients", HTTP_GET,  handlePatients);
-  server.on("/api/publish",  HTTP_POST, handlePublish);
-  server.on("/api/wifi",    HTTP_POST, handleWifiConfig);    // NVS : reseau + IP fixe
-  server.on("/api/mqtt",    HTTP_POST, handleMqttConfig);    // NVS : broker + CA TLS + cle AES
-  server.on("/api/config",  HTTP_GET,  handleGetConfig);     // NVS : lecture (sans secrets)
-  server.on("/api/reset",   HTTP_POST, handleResetConfig);   // NVS : effacement -> AP
-  server.serveStatic("/", LittleFS, "/www/");   // page web + jsPDF stockes en flash
-  server.begin();
+  BPB_WebServer.on("/api/status",  HTTP_GET,  sendJson);
+  BPB_WebServer.on("/api/report",  HTTP_GET,  handleReport);
+  BPB_WebServer.on("/api/start",   HTTP_POST, handleStart);
+  BPB_WebServer.on("/api/approve", HTTP_POST, handleApprove);
+  BPB_WebServer.on("/api/value",   HTTP_POST, handleValue);
+  BPB_WebServer.on("/api/patients", HTTP_GET,  handlePatients);
+  BPB_WebServer.on("/api/publish",  HTTP_POST, handlePublish);
+  BPB_WebServer.on("/api/wifi",    HTTP_POST, handleWifiConfig);    // NVS : reseau + IP fixe
+  BPB_WebServer.on("/api/mqtt",    HTTP_POST, handleMqttConfig);    // NVS : broker + CA TLS + cle AES
+  BPB_WebServer.on("/api/config",  HTTP_GET,  handleGetConfig);     // NVS : lecture (sans secrets)
+  BPB_WebServer.on("/api/reset",   HTTP_POST, handleResetConfig);   // NVS : effacement -> AP
+  BPB_WebServer.serveStatic("/", LittleFS, "/www/");   // page web + jsPDF stockes en flash
+  BPB_WebServer.begin();
 }

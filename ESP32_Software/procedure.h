@@ -1,3 +1,4 @@
+
 #ifndef PROCEDURE_H
 #define PROCEDURE_H
 
@@ -9,19 +10,16 @@
 // Les positions S1/S2/S3/S4 utilisent la numerotation officielle du
 // document d'architecture (README_FR, section 3 a) :
 //   S1 : 1 PULSATION / 2 POMPE / 3 45 degres ; S2/S3/S4 : 1 OUVERT / 2 FERME.
-struct Step { const char* title; const char* instr; char type; };  // A=auto, M=manuel
+struct BPB_Step { const char* title; const char* instr; char type; };  // A=auto, M=manuel
 
-extern const Step CALIB[];   // auto-diagnostic (README_FR 8 a)
-extern const Step TESTS[];   // procedure de test (README_FR 8 b)
+extern const BPB_Step CALIB[];   // auto-diagnostic (README_FR 8 a)
+extern const BPB_Step TESTS[];   // procedure de test (README_FR 8 b)
 extern const int   N_CALIB, N_TESTS;
 
-// Sequence en cours
-extern const Step* curTable;
-extern int        curLen;
-extern const Step* getStep(int i);
-extern int        getStepCount();
+// Sequence en cours : curTable, curLen, getStep() et getStepCount() sont
+// PRIVES a procedure.cpp (static) - utilises uniquement en interne.
 
-void procedureStart(const Step* tbl, int len);  // debut de sequence
+void procedureStart(const BPB_Step* tbl, int len);  // debut de sequence
 void procedureAdvance();                         // approbation recue -> etape suivante
 void procedureRunAuto(int idx);                  // partie automatique de l'etape idx
 

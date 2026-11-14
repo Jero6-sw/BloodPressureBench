@@ -1,3 +1,4 @@
+
 #include "mqtt_link.h"
 #include "config.h"
 #include "peripherals.h"
@@ -10,12 +11,12 @@
 #include <mbedtls/gcm.h>
 #include <base64.h>
 
-static WiFiClientSecure tlsClient;
-static PubSubClient     mqtt(tlsClient);
+static WiFiClientSecure BPB_tlsClient;
+static PubSubClient     BPB_mqtt(BPB_tlsClient);
 static bool             mqttActive = false;
 
 // Config effective : NVS si renseignee, sinon repli config.h
-static String mqttHost, caPem, aesKey;
+static String BPB_mqttHost, BPB_caPem, BPB_aesKey;
 
 // ---------- Chiffrement AES-256-GCM du payload mesures ----------
 // Sortie base64( IV(12) || chiffre || TAG(16) ). Cle : NVS (provision).
@@ -24,7 +25,7 @@ static String encryptAesGcm(const char* plain, size_t len) {
   for (int i = 0; i < 12; i++) iv[i] = (unsigned char)esp_random();
   mbedtls_gcm_context gcm;
   mbedtls_gcm_init(&gcm);
-  mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, (const unsigned char*)aesKey.c_str(), 256);
+  mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, (const unsigned char*)BPB_aesKey.c_str(), 256);
   mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, len, iv, 12, nullptr, 0,
                             (const unsigned char*)plain, out, 16, tag);
   mbedtls_gcm_free(&gcm);
@@ -36,53 +37,53 @@ static String encryptAesGcm(const char* plain, size_t len) {
 void mqttSetup() {
   if (!provHasConfig()) return;               // pas de reseau NVS => MQTT inactif
   ProvCfg c = provLoad();
-  mqttHost = c.mqttHost.length() ? c.mqttHost : MQTT_HOST;
-  caPem    = c.caPem.length()    ? c.caPem    : MQTT_CA_CERT;
-  aesKey   = c.aesKey.length()   ? c.aesKey   : MQTT_AES_KEY;
-  if (aesKey.length() < 32) {                  // cle AES obligatoire (32 octets)
+  BPB_mqttHost = c.BPB_mqttHost.length() ? c.BPB_mqttHost : MQTT_HOST;
+  BPB_caPem    = c.BPB_caPem.length()    ? c.BPB_caPem    : MQTT_CA_CERT;
+  BPB_aesKey   = c.BPB_aesKey.length()   ? c.BPB_aesKey   : MQTT_AES_KEY;
+  if (BPB_aesKey.length() < 32) {                  // cle AES obligatoire (32 octets)
     Serial.println("[MQTT] Cle AES absente ou trop courte : MQTT inactif");
     return;
   }
-  if (caPem.length() > 0) tlsClient.setCACert(caPem.c_str());  // CA epingle
-  mqtt.setServer(mqttHost.c_str(), MQTT_PORT);
+  if (BPB_caPem.length() > 0) BPB_tlsClient.setCACert(BPB_caPem.c_str());  // CA epingle
+  BPB_mqtt.setServer(BPB_mqttHost.c_str(), MQTT_PORT);
   mqttActive = true;                          // STA gere par provision (setup du .ino)
 }
 
 void mqttLoop() {
   if (!mqttActive || WiFi.status() != WL_CONNECTED) return;
-  if (!mqtt.connected()) mqtt.connect("banc-tensiometre");
-  else mqtt.loop();
+  if (!BPB_mqtt.connected()) BPB_mqtt.connect("banc-tensiometre");
+  else BPB_mqtt.loop();
 }
 
 // ---------- Publication des mesures d'etalonnage ----------
 bool mqttPublishCalib() {
-  if (!mqttActive || !mqtt.connected()) return false;
+  if (!mqttActive || !BPB_mqtt.connected()) return false;
   StaticJsonDocument<768> d;
-  d["zeroOffset"]  = S.zeroOffset;            // etape 1 : zero ABP air libre
-  d["gainErrPct"]  = S.gainErrPct;            // etape 2 : gain Boyle
-  d["leakSlope"]   = S.leakSlope;             // etape 3 : croisement -> pReads
-  d["leakSlopeArm"]= S.leakSlopeArm;
-  d["boyleV"]      = S.boyleV;
+  d["zeroOffset"]  = BPB_S.zeroOffset;            // etape 1 : zero ABP air libre
+  d["gainErrPct"]  = BPB_S.gainErrPct;            // etape 2 : gain Boyle
+  d["leakSlope"]   = BPB_S.leakSlope;             // etape 3 : croisement -> pReads
+  d["leakSlopeArm"]= BPB_S.leakSlopeArm;
+  d["boyleV"]      = BPB_S.boyleV;
   JsonArray pr = d.createNestedArray("pReads");
-  for (float x : S.pReads) pr.add(x);
-  d["tempC"] = S.tempC;
-  d["operator"] = S.operatorName;
+  for (float x : BPB_S.pReads) pr.add(x);
+  d["tempC"] = BPB_S.tempC;
+  d["operator"] = BPB_S.operatorName;
   d["version"] = FW_VERSION;
   String o; serializeJson(d, o);
-  return mqtt.publish(MQTT_TOPIC "/calib", o.c_str());
+  return BPB_mqtt.publish(MQTT_TOPIC "/calib", o.c_str());
 }
 
 // ---------- Publication des mesures de tension (chiffrees) ----------
 bool mqttPublishMeasures() {
-  if (!mqttActive || !mqtt.connected()) return false;
+  if (!mqttActive || !BPB_mqtt.connected()) return false;
   StaticJsonDocument<512> d;
-  d["patient"]  = S.patientName;              // liste predefinie, choisi en debut de test
-  d["operator"] = S.operatorName;
-  d["deviceSN"] = S.deviceSN;
-  d["tempC"]    = S.tempC;
+  d["patient"]  = BPB_S.patientName;              // liste predefinie, choisi en debut de test
+  d["operator"] = BPB_S.operatorName;
+  d["deviceSN"] = BPB_S.deviceSN;
+  d["tempC"]    = BPB_S.tempC;
   JsonArray ms = d.createNestedArray("displayed");
-  for (float x : S.displayed) ms.add(x);
+  for (float x : BPB_S.displayed) ms.add(x);
   String o; serializeJson(d, o);
   String enc = encryptAesGcm(o.c_str(), o.length());   // AES-256-GCM bout en bout
-  return mqtt.publish(MQTT_TOPIC "/mesures", enc.c_str());
+  return BPB_mqtt.publish(MQTT_TOPIC "/mesures", enc.c_str());
 }
