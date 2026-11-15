@@ -206,102 +206,98 @@
     <rect x="0" y="0" width="940" height="330" fill="#fcfcfc"/>
 
     <!-- ============ ENSEMBLE SOUS TEST (bleu, strictement d'origine) ============ -->
-    <rect x="15" y="28" width="270" height="150" rx="8" fill="#eaf2fb" stroke="#336699" stroke-width="1.5"/>
-    <text x="150" y="45" text-anchor="middle" fill="#336699" font-weight="bold" font-size="11">ENSEMBLE SOUS TEST (aucune intrusion)</text>
-    <rect x="30" y="55" width="110" height="62" rx="4" fill="#fff" stroke="#336699" stroke-width="2"/>
-    <rect x="42" y="65" width="86" height="26" fill="#ddffff"/>
-    <text x="85" y="82" text-anchor="middle" font-size="10">Écran</text>
-    <text x="85" y="110" text-anchor="middle" fill="#336699" font-weight="bold" font-size="12">Tensiomètre</text>
-    <line x1="85" y1="117" x2="85" y2="124" stroke="#336699" stroke-width="4"/>
-    <rect x="25" y="124" width="230" height="42" rx="6" fill="#ffffdd" stroke="#aa8800" stroke-width="2"/>
-    <text x="140" y="141" text-anchor="middle" fill="#a80" font-weight="bold" font-size="11">Brassard d'origine + bras butyle 1 m</text>
-    <text x="140" y="157" text-anchor="middle" font-size="9" fill="#555">accordéon ~16 cm Ø80 — filet — P_int = 100 mmHg</text>
-    <text x="150" y="130" text-anchor="middle" font-size="9" fill="#555"> </text>
+    <rect x="6.17" y="28" width="270" height="150" rx="8" fill="#eaf2fb" stroke="#336699" stroke-width="1.5"/>
+    <text x="141.17" y="45" text-anchor="middle" fill="#336699" font-weight="bold" font-size="11">ENSEMBLE SOUS TEST (aucune intrusion)</text>
+    <rect x="21.17" y="55" width="110" height="62" rx="4" fill="#fff" stroke="#336699" stroke-width="2"/>
+    <rect x="33.17" y="65" width="86" height="26" fill="#ddffff"/>
+    <text x="76.17" y="82" text-anchor="middle" font-size="10">Écran</text>
+    <text x="76.17" y="110" text-anchor="middle" fill="#336699" font-weight="bold" font-size="12">Tensiomètre</text>
+    <line x1="76.17" y1="117" x2="76.17" y2="124" stroke="#336699" stroke-width="4"/>
+    <rect x="16.17" y="124" width="230" height="42" rx="6" fill="#ffffdd" stroke="#aa8800" stroke-width="2"/>
+    <text x="131.17" y="141" text-anchor="middle" fill="#aa8800" font-weight="bold" font-size="11">Brassard d'origine + bras butyle 1 m</text>
+    <text x="131.17" y="157" text-anchor="middle" font-size="9" fill="#555">accordéon ~16 cm Ø80 — filet — P_int = 100 mmHg</text>
 
-    <!-- Schrader / chuck, puis chaine de mesure (vert) jusqu'au noeud M -->
-    <line x1="255" y1="150" x2="293" y2="150" stroke="#00aa66" stroke-width="3"/>
-    <circle cx="300" cy="150" r="7" fill="#fff" stroke="#0a6" stroke-width="2"/>
-    <text x="300" y="133" text-anchor="middle" fill="#00aa66" font-size="9">Schrader / chuck</text>
-    <line x1="307" y1="150" x2="830" y2="150" stroke="#00aa66" stroke-width="3"/>
+    <!-- Schrader / chuck, puis chaine de mesure (vert) -->
+    <line x1="246.17" y1="150" x2="284.17" y2="150" stroke="#00aa66" stroke-width="3"/>
+    <circle cx="291.17" cy="150" r="7" fill="#fff" stroke="#00aa66" stroke-width="2"/>
+    <text x="291.17" y="133" text-anchor="middle" fill="#00aa66" font-size="9">Schrader / chuck</text>
+    <line x1="298.17" y1="150" x2="796.27" y2="150" stroke="#00aa66" stroke-width="2.93"/>
 
     <!-- Noeud M + capteur ABP -->
-    <circle cx="440" cy="150" r="6" fill="#00aa66"/>
-    <text x="440" y="133" text-anchor="middle" fill="#00aa66" font-weight="bold" font-size="11">M</text>
-    <line x1="440" y1="144" x2="440" y2="97" stroke="#00aa66" stroke-width="3"/>
-    <rect x="360" y="45" width="160" height="52" rx="8" fill="#efe" stroke="#3a3" stroke-width="2"/>
-    <text x="440" y="66" text-anchor="middle" fill="#33aa33" font-weight="bold" font-size="12">Capteur ABP (étalon)</text>
-    <text x="440" y="84" text-anchor="middle" font-size="9" fill="#555">I2C 100 Hz — ABPDRRV040MG2A3</text>
+    <circle cx="431.17" cy="150" r="6" fill="#00aa66"/>
+    <text x="431.17" y="133" text-anchor="middle" fill="#00aa66" font-weight="bold" font-size="11">M</text>
+    <line x1="431.17" y1="144" x2="431.17" y2="97" stroke="#00aa66" stroke-width="3"/>
+    <rect x="351.17" y="45" width="160" height="52" rx="8" fill="#efe" stroke="#33aa33" stroke-width="2"/>
+    <text x="431.17" y="66" text-anchor="middle" fill="#33aa33" font-weight="bold" font-size="12">Capteur ABP (étalon)</text>
+    <text x="431.17" y="84" text-anchor="middle" font-size="9" fill="#555">I2C 100 Hz — ABPDRRV040MG2A3</text>
 
     <!-- Branche purge (V6) -->
-    <circle cx="520" cy="150" r="5" fill="#00aa66"/>
-    <line x1="520" y1="155" x2="520" y2="235" stroke="#555" stroke-width="3"/>
-    <circle id="vsc6" cx="520" cy="195" r="12" fill="#e0e0e0" stroke="#cc7733" stroke-width="2.5"/>
-    <line x1="511" y1="204" x2="529" y2="186" stroke="#cc7733" stroke-width="2.5"/>
-    <text x="520" y="222" text-anchor="middle" font-size="10" font-weight="bold" fill="#cc7733">V6 — purge atmo</text>
-    <text id="vst6" x="520" y="235" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <text x="520" y="262" text-anchor="middle" font-size="10" fill="#555">→ atmosphère</text>
+    <circle cx="511.17" cy="150" r="5" fill="#00aa66"/>
+    <line x1="511.17" y1="155" x2="511.17" y2="235" stroke="#555" stroke-width="3"/>
+    <circle id="vsc6" cx="511.62" cy="185.73" r="12" fill="#e0e0e0" stroke="#cc7733" stroke-width="2.5"/>
+    <line x1="502.62" y1="194.73" x2="520.62" y2="176.73" stroke="#cc7733" stroke-width="2.5"/>
+    <text x="479.4" text-anchor="middle" fill="#cc7733" font-weight="bold" font-size="10"><tspan x="479.4" y="197.73">V6 —</tspan><tspan x="479.4" y="210.23">purge atmo</tspan></text>
+    <text id="vst6" x="478.52" y="220.44" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
 
-    <!-- V3 -> manometre aneroide -->
-    <circle id="vsc3" cx="580" cy="150" r="12" fill="#e0e0e0" stroke="#00aa66" stroke-width="2.5"/>
-    <line x1="571" y1="159" x2="589" y2="141" stroke="#00aa66" stroke-width="2.5"/>
-    <text x="580" y="180" text-anchor="middle" font-size="10" font-weight="bold" fill="#0a6">V3 — manomètre (S2)</text>
-    <text id="vst3" x="580" y="193" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <line x1="592" y1="150" x2="660" y2="150" stroke="#00aa66" stroke-width="3"/>
-    <rect x="660" y="125" width="170" height="50" rx="6" fill="#fff" stroke="#888" stroke-width="1.5"/>
-    <text x="745" y="145" text-anchor="middle" font-weight="bold" font-size="11">Manomètre anéroïde cl. 0,5</text>
-    <text x="745" y="161" text-anchor="middle" font-size="9" fill="#555">(tube Bourdon — isoler hors lectures)</text>
+    <!-- V3 (in ligne) + manometre aneroide -->
+    <circle id="vsc3" cx="571.17" cy="150" r="12" fill="#e0e0e0" stroke="#00aa66" stroke-width="2.5"/>
+    <line x1="562.17" y1="159" x2="580.17" y2="141" stroke="#00aa66" stroke-width="2.5"/>
+    <text x="571.61" text-anchor="middle" fill="#00aa66" font-weight="bold" font-size="10"><tspan x="571.61" y="114.2">V3 —</tspan><tspan x="571.61" y="126.7">manomètre (S2)</tspan></text>
+    <text id="vst3" x="571.17" y="136.03" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+    <line x1="583.17" y1="150" x2="651.17" y2="150" stroke="#00aa66" stroke-width="3"/>
+    <rect x="374.03" y="232.68" width="170" height="50" rx="6" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="459.03" y="252.68" text-anchor="middle" font-weight="bold" font-size="11">Manomètre anéroïde cl. 0,5</text>
+    <text x="459.03" y="268.68" text-anchor="middle" font-size="9" fill="#555">(tube Bourdon — isoler hors lectures)</text>
 
-    <!-- V1 -> pulsation directe -->
-    <circle id="vsc1" cx="760" cy="150" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
-    <line x1="751" y1="159" x2="769" y2="141" stroke="#ee8800" stroke-width="2.5"/>
-    <text x="760" y="180" text-anchor="middle" font-size="10" font-weight="bold" fill="#ee8800">V1 — pulsation (S1-1)</text>
-    <text id="vst1" x="760" y="193" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+    <!-- V1 (in ligne) : pulsation directe -->
+    <circle id="vsc1" cx="706.6" cy="150" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
+    <line x1="697.6" y1="159" x2="715.6" y2="141" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="707.04" text-anchor="middle" fill="#ee8800" font-weight="bold" font-size="10"><tspan x="707.04" y="112.48">V1 —</tspan><tspan x="707.04" y="124.98">pulsation (S1-1)</tspan></text>
+    <text id="vst1" x="704.84" y="135.19" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
 
     <!-- Seringue + came -->
-    <line x1="772" y1="150" x2="805" y2="150" stroke="#333" stroke-width="3"/>
-    <rect x="805" y="128" width="110" height="44" rx="4" fill="#fff" stroke="#333" stroke-width="2"/>
-    <rect x="822" y="138" width="36" height="18" fill="#ccc"/>
-    <text x="860" y="118" text-anchor="middle" font-weight="bold" font-size="11">Seringue 50 mL</text>
-    <text x="860" y="186" text-anchor="middle" font-size="9" fill="#555">BD — course butée ~2 mL</text>
-    <circle cx="925" cy="150" r="22" fill="#fff" stroke="#555" stroke-width="2"/>
-    <circle cx="925" cy="150" r="4" fill="#555"/>
-    <circle cx="935" cy="140" r="5" fill="#e80"/>
-    <text x="915" y="192" text-anchor="middle" font-size="9" fill="#555">Came 60 tr/min · NEMA17 + TMC2209</text>
+    <line x1="796.27" y1="150" x2="841.19" y2="150" stroke="#333" stroke-width="3.5"/>
+    <rect x="796.17" y="128" width="110" height="44" rx="4" fill="#fff" stroke="#333" stroke-width="2"/>
+    <rect x="841.42" y="140.65" width="36" height="18" fill="#ccc"/>
+    <text x="851.17" y="118" text-anchor="middle" font-weight="bold" font-size="11">Seringue 50 mL</text>
+    <text x="851.17" y="186" text-anchor="middle" font-size="9" fill="#555">BD — course butée ~2 mL</text>
+    <circle cx="916.17" cy="150" r="22" fill="#fff" stroke="#555" stroke-width="2"/>
+    <circle cx="916.17" cy="150" r="4" fill="#555"/>
+    <circle cx="926.17" cy="140" r="5" fill="#e80"/>
+    <text x="868.22" text-anchor="middle" font-size="9" fill="#555"><tspan x="868.22" y="199.94">Came 60 tr/min ·</tspan><tspan x="868.22" y="211.19">NEMA17 + TMC2209</tspan></text>
 
-    <!-- Branche clapets (orange) : V5 / CV2 / noeud B / CV1 / V2 -->
-    <circle cx="660" cy="150" r="5" fill="#ee8800"/>
-    <line x1="660" y1="155" x2="660" y2="265" stroke="#ee8800" stroke-width="3"/>
-    <circle id="vsc5" cx="660" cy="185" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
-    <line x1="651" y1="194" x2="669" y2="176" stroke="#ee8800" stroke-width="2.5"/>
-    <text x="660" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#ee8800">V5 — clapets (S4-1)</text>
-    <text id="vst5" x="660" y="228" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <polygon points="652,255 668,255 660,240" fill="#fff" stroke="#ee8800" stroke-width="2"/>
-    <line x1="652" y1="238" x2="668" y2="238" stroke="#ee8800" stroke-width="2.5"/>
-    <text x="678" y="248" font-size="10" fill="#ee8800" font-weight="bold">CV2</text>
-    <circle cx="660" cy="265" r="5" fill="#ee8800"/>
-    <line x1="660" y1="265" x2="800" y2="265" stroke="#ee8800" stroke-width="3"/>
-    <text x="612" y="288" text-anchor="middle" font-size="10" fill="#ee8800" font-weight="bold">CV1</text>
-    <polygon points="596,257 596,273 612,265" fill="#fff" stroke="#ee8800" stroke-width="2"/>
-    <line x1="614" y1="257" x2="614" y2="273" stroke="#ee8800" stroke-width="2.5"/>
-    <text x="545" y="269" font-size="10" fill="#ee8800">atmosphère</text>
-    <circle cx="800" cy="150" r="5" fill="#ee8800"/>
-    <line x1="800" y1="155" x2="800" y2="265" stroke="#ee8800" stroke-width="3"/>
-    <circle id="vsc2" cx="800" cy="185" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
-    <line x1="791" y1="194" x2="809" y2="176" stroke="#ee8800" stroke-width="2.5"/>
-    <text x="800" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#ee8800">V2 — pompe (S1-2)</text>
-    <text id="vst2" x="800" y="228" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+    <!-- Branche clapets (orange) : V5 / CV2 / CV1 / V2 -->
+    <circle cx="651.17" cy="150" r="5" fill="#ee8800"/>
+    <line x1="651.17" y1="155" x2="651.17" y2="265" stroke="#ee8800" stroke-width="3"/>
+    <circle id="vsc5" cx="651.17" cy="185" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
+    <line x1="642.17" y1="194" x2="660.17" y2="176" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="614.99" text-anchor="middle" fill="#ee8800" font-weight="bold" font-size="10"><tspan x="614.99" y="198.67">V5 —</tspan><tspan x="614.99" y="211.17">clapets (S4-1)</tspan></text>
+    <text id="vst5" x="611.01" y="223.59" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+    <polygon points="659.17,255 651.17,240 643.17,255" fill="#fff" stroke="#ee8800" stroke-width="2"/>
+    <line x1="634.35" y1="238" x2="650.35" y2="238" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="669.17" y="248" font-size="10" fill="#ee8800" font-weight="bold">CV2</text>
+    <circle cx="651.17" cy="265" r="5" fill="#ee8800"/>
+    <line x1="567.87" y1="265" x2="765.58" y2="265" stroke="#ee8800" stroke-width="3.57"/>
+    <text x="603.17" y="288" text-anchor="middle" font-size="10" fill="#ee8800" font-weight="bold">CV1</text>
+    <polygon points="587.17,273 603.17,265 587.17,257" fill="#fff" stroke="#ee8800" stroke-width="2"/>
+    <line x1="596.35" y1="257" x2="596.35" y2="273" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="569.71" y="252.23" font-size="10" fill="#ee8800">atmosphère</text>
+    <circle cx="766.46" cy="150.88" r="5" fill="#ee8800"/>
+    <line x1="766.46" y1="155.88" x2="766.46" y2="265.88" stroke="#ee8800" stroke-width="3"/>
+    <circle id="vsc2" cx="766.46" cy="185.88" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
+    <line x1="757.46" y1="176.88" x2="775.46" y2="194.88" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="733.36" text-anchor="middle" fill="#ee8800" font-weight="bold" font-size="10"><tspan x="733.36" y="199.11">V2 —</tspan><tspan x="733.36" y="211.61">pompe (S1-2)</tspan></text>
+    <text id="vst2" x="733.36" y="224.47" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
 
     <!-- ESP32 + liaisons electriques (tirets) -->
-    <rect x="25" y="272" width="220" height="44" rx="8" fill="#eeffee" stroke="#336699" stroke-width="2"/>
-    <text x="135" y="290" text-anchor="middle" fill="#336699" font-weight="bold" font-size="12">ESP32-S3 — serveur web</text>
-    <text x="135" y="306" text-anchor="middle" fill="#336699" font-size="9">moteur · vannes · I2C · WiFi · rapports</text>
-    <line x1="925" y1="172" x2="925" y2="300" stroke="#336699" stroke-width="1.5" stroke-dasharray="4,3"/>
-    <line x1="925" y1="300" x2="250" y2="300" stroke="#336699" stroke-width="1.5" stroke-dasharray="4,3"/>
-    <line x1="520" y1="240" x2="520" y2="255" stroke="#cc7733" stroke-width="0"/>
-    <line x1="560" y1="262" x2="480" y2="292" stroke="#336699" stroke-width="1.2" stroke-dasharray="3,3"/>
+    <rect x="16.17" y="272" width="220" height="44" rx="8" fill="#eeffee" stroke="#336699" stroke-width="2"/>
+    <text x="126.17" y="290" text-anchor="middle" fill="#336699" font-weight="bold" font-size="12">ESP32-S3 — serveur web</text>
+    <text x="126.17" y="306" text-anchor="middle" fill="#336699" font-size="9">moteur · vannes · I2C · WiFi · rapports</text>
+    <line x1="916.17" y1="172" x2="916.17" y2="300" stroke="#336699" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <line x1="916.17" y1="300" x2="241.17" y2="300" stroke="#336699" stroke-width="1.5" stroke-dasharray="4,3"/>
 
     <!-- Legende -->
-    <text x="470" y="322" text-anchor="middle" font-size="10" fill="#555">Vert : chaîne de mesure · Orange : mode pompe (contourné en mesure) · Bleu : ensemble sous test · ● jonction · fond vert clair = vanne OUVERTE, fond gris = FERMÉE</text>
+    <text x="461.17" y="326.41" text-anchor="middle" font-size="10" fill="#555">Vert : chaîne de mesure · Orange : mode pompe (contourné en mesure) · Bleu : ensemble sous test · ● jonction · fond vert clair = vanne OUVERTE, fond gris = FERMÉE</text>
   </svg>
 </div>
 
