@@ -66,8 +66,6 @@
   <div class="metric"><div class="k">Config vannes</div><div class="v" id="m_cfg" style="font-size:.85rem">—</div></div>
   <div class="metric"><div class="k">Étape</div><div class="v" id="m_step">—</div></div>
   <div class="metric"><div class="k">Fuite bras</div><div class="v" id="m_leak" style="font-size:.85rem">—</div></div>
-  <div class="metric"><div class="k">T puce</div><div class="v" id="m_temp">—</div></div>
-  <div class="metric"><div class="k">Vcc</div><div class="v" id="m_vcc">—</div></div>
 </div>
 
 <main>
@@ -348,10 +346,7 @@ async function poll(){
     el('#m_step').textContent=s.step||0;
     el('#m_leak').textContent = (s.armLeak>=0) ? s.armLeak.toFixed(2)+' mmHg/min' : '—';
     el('#m_leak').className='v'+((s.armLeak>=1.0)?' warn':'');
-    el('#m_temp').textContent=(s.chipTemp||0).toFixed(0)+' °C';
     var v = s.vcc||0;
-    el('#m_vcc').textContent = v>0 ? (v/1000).toFixed(2)+' V' : 'n/c';
-    el('#m_vcc').className='v'+(v>0&&v<4500?' warn':'');
     // SVG : 5 stopcocks (V1,V2,V3,V5,V6)
     for (var k=0;k<5;k++){
       var id=VID[k], o=s.valves[id];
@@ -368,13 +363,23 @@ async function poll(){
     for (var j=0;j<5;j++) vh += '<button class="'+(s.valves[VID[j]]?'on':'sec')+'" onclick="act(\'v'+VID[j]+'\','+(s.valves[VID[j]]?0:1)+')">'+VN[j]+' : '+(s.valves[VID[j]]?'fermer':'ouvrir')+'</button>';
     el('#valvebtns').innerHTML=vh;
     // Systeme
-    var g='<div class="metric"><div class="k">T puce</div><div class="v">'+(s.chipTemp||0).toFixed(1)+' °C</div></div>'+
-          '<div class="metric"><div class="k">Vcc</div><div class="v">'+(v>0?(v/1000).toFixed(3)+' V':'n/c')+'</div></div>'+
+    var f1=(s.chipTemp!==undefined&&s.chipTemp!==null)?s.chipTemp.toFixed(1)+' °C':'—';
+    var f2=(v>0)?(v/1000).toFixed(3)+' V':'n/c';
+    var f3=(s.rssi!==undefined&&s.rssi!==null)?s.rssi+' dBm':'—';
+    var f4=(s.seatS0!==undefined&&s.seatS0>=0)?s.seatS0.toFixed(2)+' mmHg/min':'—';
+    var f5=(s.seatArm!==undefined&&s.seatArm>=0)?s.seatArm.toFixed(2)+' mmHg/min':'—';
+    var f6=(s.armLeak!==undefined&&s.armLeak>=0)?s.armLeak.toFixed(2)+' mmHg/min':'—';
+    var f7=(s.seatBranch!==undefined&&s.seatBranch>=0)?(s.seatBranch>=0? (s.seatBranch>0?'+':'')+s.seatBranch.toFixed(2)+' mmHg/min':'—'):'—';
+    var f8='v'+s.version;
+    var g='<div class="metric"><div class="k">T puce</div><div class="v">'+f1+'</div></div>'+
+          '<div class="metric"><div class="k">Vcc</div><div class="v'+(v>0&&v<4500?' warn':'')+'">'+f2+'</div></div>'+
           '<div class="metric"><div class="k">Uptime</div><div class="v">'+fmtUp(s.uptime||0)+'</div></div>'+
-          '<div class="metric"><div class="k">RSSI WiFi</div><div class="v">'+(s.rssi||0)+' dBm</div></div>'+
-          '<div class="metric"><div class="k">A0 bench zéro</div><div class="v">'+((s.seatS0>=0)?s.seatS0.toFixed(2):'—')+'</div></div>'+
-          '<div class="metric"><div class="k">A1 branche</div><div class="v">'+((s.seatBranch>=0)?s.seatBranch.toFixed(2):'—')+'</div></div>'+
-          '<div class="metric"><div class="k">Firmware</div><div class="v">v'+s.version+'</div></div>';
+          '<div class="metric"><div class="k">RSSI WiFi</div><div class="v">'+f3+'</div></div>'+
+          '<div class="metric"><div class="k">A0 bench zéro (S0)</div><div class="v'+(s.seatS0>=0.3?' warn':'')+'">'+f4+'</div></div>'+
+          '<div class="metric"><div class="k">B bras branché (S_total)</div><div class="v">'+f5+'</div></div>'+
+          '<div class="metric"><div class="k">Fuite bras (S_total − S0)</div><div class="v'+(s.armLeak>=1.0?' warn':'')+'">'+f6+'</div></div>'+
+          '<div class="metric"><div class="k">A1 branche clapets</div><div class="v">'+f7+'</div></div>'+
+          '<div class="metric"><div class="k">Firmware</div><div class="v">'+f8+'</div></div>';
     el('#sysgrid').innerHTML=g;
     // Modal
     if (s.approval) { el('#modal_msg').textContent=s.approvalMsg; el('#modal_chips').innerHTML=chips(s.valves); el('#modal').style.display='flex'; }
