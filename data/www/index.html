@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -47,12 +46,12 @@
   <h1>🩺 Banc de test — dérive tensiomètre + brassard</h1>
   <span class="ver" id="hver">v—</span>
   <select id="menu" onchange="showSec(this.value)">
-    <option value="proc">▶ Procédures</option>
-    <option value="patient">👤 Patient</option>
-    <option value="rapport">📄 Rapport & MQTT</option>
-    <option value="manuel">🔧 Test manuel</option>
     <option value="sys">💻 Système</option>
+    <option value="patient">👤 Patient</option>
+    <option value="proc" selected>▶ Procédures</option>
+    <option value="rapport">📄 Rapport & MQTT</option>
     <option value="net">📡 Réseau & config</option>
+    <option value="manuel">🔧 Test manuel</option>
   </select>
 </header>
 
@@ -66,98 +65,20 @@
   <div class="metric"><div class="k">Purge</div><div class="v" id="m_val">—</div></div>
   <div class="metric"><div class="k">Config vannes</div><div class="v" id="m_cfg" style="font-size:.85rem">—</div></div>
   <div class="metric"><div class="k">Étape</div><div class="v" id="m_step">—</div></div>
+  <div class="metric"><div class="k">Fuite bras</div><div class="v" id="m_leak" style="font-size:.85rem">—</div></div>
   <div class="metric"><div class="k">T puce</div><div class="v" id="m_temp">—</div></div>
   <div class="metric"><div class="k">Vcc</div><div class="v" id="m_vcc">—</div></div>
 </div>
 
 <main>
 
-<!-- Schema pneumatique temps reel (toujours visible) -->
-<div class="card" id="svgcard">
-  <h2>Schéma pneumatique — état des électrovannes en temps réel</h2>
-  <svg viewBox="0 0 920 330" xmlns="http://www.w3.org/2000/svg" font-size="11">
-    <!-- Tuyaux (fond) -->
-    <g stroke="#9fb3c8" stroke-width="3" fill="none">
-      <path d="M150 45 H170"/><path d="M234 45 H260"/><path d="M324 45 H370 V110"/>
-      <path d="M150 170 H170"/><path d="M234 170 H260"/><path d="M324 170 H345 V110"/>
-      <path d="M410 37 H500"/><path d="M410 37 V37 M378 105 H410 V37"/>
-      <path d="M378 115 H410 V150"/><path d="M474 168 H500"/>
-      <path d="M378 118 H410 V250"/><path d="M474 250 H520"/>
-      <path d="M370 110 H378"/>
-    </g>
-    <!-- Sources -->
-    <rect x="20" y="22" width="130" height="46" rx="8" fill="#e8eef7" stroke="#35589e"/>
-    <text x="85" y="41" text-anchor="middle" font-weight="600">Seringue motorisée</text>
-    <text x="85" y="56" text-anchor="middle" class="note">pulsation 60 bpm</text>
-    <rect x="20" y="147" width="130" height="46" rx="8" fill="#e8eef7" stroke="#35589e" id="pumpbox"/>
-    <text x="85" y="166" text-anchor="middle" font-weight="600">Pompe + moteur</text>
-    <text x="85" y="181" text-anchor="middle" class="note" id="pumpst">OFF</text>
-    <!-- Noeud M -->
-    <circle cx="372" cy="110" r="9" fill="#35589e"/>
-    <text x="372" y="132" text-anchor="middle" font-weight="600">nœud M</text>
-    <!-- Vannes V0 a V6 (etat mis a jour par poll()) -->
-    <!-- V0 -->
-    <rect id="vrect0" x="170" y="25" width="64" height="40" rx="6" fill="#cfd8dc" stroke="#8aa"/>
-    <text x="202" y="43" text-anchor="middle" font-weight="700">V0</text>
-    <text id="vst0" x="202" y="57" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <text x="202" y="17" text-anchor="middle" class="note">série (S1 45°)</text>
-    <!-- V1 -->
-    <rect id="vrect1" x="260" y="25" width="64" height="40" rx="6" fill="#cfd8dc" stroke="#8aa"/>
-    <text x="292" y="43" text-anchor="middle" font-weight="700">V1</text>
-    <text id="vst1" x="292" y="57" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <text x="292" y="17" text-anchor="middle" class="note">pulsation (S1-1)</text>
-    <!-- V2 -->
-    <rect id="vrect2" x="170" y="150" width="64" height="40" rx="6" fill="#cfd8dc" stroke="#8aa"/>
-    <text x="202" y="168" text-anchor="middle" font-weight="700">V2</text>
-    <text id="vst2" x="202" y="182" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <text x="202" y="205" text-anchor="middle" class="note">pompe (S1-2)</text>
-    <!-- V5 -->
-    <rect id="vrect5" x="260" y="150" width="64" height="40" rx="6" fill="#cfd8dc" stroke="#8aa"/>
-    <text x="292" y="168" text-anchor="middle" font-weight="700">V5</text>
-    <text id="vst5" x="292" y="182" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <text x="292" y="205" text-anchor="middle" class="note">clapets (S4-1)</text>
-    <!-- V3 -->
-    <rect id="vrect3" x="410" y="17" width="64" height="40" rx="6" fill="#cfd8dc" stroke="#8aa"/>
-    <text x="442" y="35" text-anchor="middle" font-weight="700">V3</text>
-    <text id="vst3" x="442" y="49" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <text x="442" y="72" text-anchor="middle" class="note">manomètre (S2)</text>
-    <!-- V4 -->
-    <rect id="vrect4" x="410" y="148" width="64" height="40" rx="6" fill="#cfd8dc" stroke="#8aa"/>
-    <text x="442" y="166" text-anchor="middle" font-weight="700">V4</text>
-    <text id="vst4" x="442" y="180" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <text x="442" y="203" text-anchor="middle" class="note">bras (S3)</text>
-    <!-- V6 -->
-    <rect id="vrect6" x="410" y="230" width="64" height="40" rx="6" fill="#cfd8dc" stroke="#8aa"/>
-    <text x="442" y="248" text-anchor="middle" font-weight="700">V6</text>
-    <text id="vst6" x="442" y="262" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
-    <text x="442" y="285" text-anchor="middle" class="note">purge atmo</text>
-    <!-- Instruments -->
-    <rect x="500" y="15" width="150" height="44" rx="8" fill="#e8eef7" stroke="#35589e"/>
-    <text x="575" y="41" text-anchor="middle" font-weight="600">Manomètre anéroïde</text>
-    <rect x="500" y="88" width="150" height="44" rx="8" fill="#e8eef7" stroke="#35589e"/>
-    <text x="575" y="107" text-anchor="middle" font-weight="600">Capteur ABP (I2C)</text>
-    <text id="svg_p" x="575" y="124" text-anchor="middle" font-weight="700" font-size="13">— mmHg</text>
-    <rect x="500" y="146" width="150" height="44" rx="8" fill="#e8eef7" stroke="#35589e"/>
-    <text x="575" y="166" text-anchor="middle" font-weight="600">Brassard patient</text>
-    <text x="575" y="181" text-anchor="middle" class="note">sur filet, chuck verrouillé</text>
-    <text x="530" y="253" class="note">→ atmosphère</text>
-    <!-- Configuration en cours -->
-    <rect x="700" y="15" width="200" height="58" rx="8" fill="#f5f0e6" stroke="#b8935a"/>
-    <text x="800" y="34" text-anchor="middle" class="note">CONFIGURATION PNEUMATIQUE</text>
-    <text id="svg_cfg" x="800" y="56" text-anchor="middle" font-weight="700" font-size="13">—</text>
-    <text x="800" y="100" text-anchor="middle" class="note">vert = ouverte · gris = fermée</text>
-  </svg>
-</div>
-
-<!-- ================= PROCEDURES ================= -->
-<section id="sec-proc" class="on">
+<!-- ================= SYSTEME ================= -->
+<section id="sec-sys">
   <div class="card">
-    <h2>Procédures</h2>
-    <button onclick="start('calib')">▶ Auto-diagnostic (avant chaque session)</button>
-    <button class="sec" onclick="start('test')">▶ Test (5 mesures)</button>
-    <p class="note">Les électrovannes (V0-V6) sont pilotées automatiquement à chaque étape ;
-    le schéma ci-dessus affiche leur position en temps réel. Les étapes manuelles demandent
-    votre validation pour continuer.</p>
+    <h2>Paramètres système</h2>
+    <div id="sysgrid" style="display:flex;flex-wrap:wrap;gap:.5rem"></div>
+    <p class="note">Vcc mesuré via pont diviseur sur GPIO34 (100k/100k, facteur 2). T puce = capteur interne de l'ESP32
+    (indicatif : inquiétant seulement au-delà de ~80 °C). RSSI < -80 dBm = mauvaise portée.</p>
   </div>
 </section>
 
@@ -169,6 +90,19 @@
       <select id="f_patient" onchange="setPatient(this.value)"></select>
     </label>
     <p class="note">Le nom est enregistré avec les mesures ; l'envoi des mesures de tension est chiffré (AES-256-GCM sur MQTT TLS).</p>
+  </div>
+</section>
+
+<!-- ================= PROCEDURES ================= -->
+<section id="sec-proc" class="on">
+  <div class="card">
+    <h2>Procédures</h2>
+    <button onclick="start('calib')">▶ Auto-diagnostic de session (10 étapes)</button>
+    <button class="sec" onclick="start('test')">▶ Test (5 mesures)</button>
+    <button class="sec" onclick="start('maint')">▶ Maintenance mensuelle (sièges)</button>
+    <p class="note">5 vannes (V1,V2,V3,V5,V6) pilotées automatiquement à chaque étape.
+    L'étanchéité banc/bras est validée par les tests de sièges A0 (S0 &lt; 0,3 mmHg/min) et la fuite bras par
+    différence (S_total − S0 &lt; 1,0 mmHg/min). Étapes manuelles : valider la fenêtre pour continuer.</p>
   </div>
 </section>
 
@@ -202,41 +136,6 @@
       <button onclick="saveForm(); generateReportPDF()">📄 Générer le rapport PDF</button>
       <button class="sec" onclick="saveForm(); publishMqtt()">📡 Publier sur MQTT (chiffré)</button>
     </div>
-  </div>
-</section>
-
-<!-- ================= TEST MANUEL ================= -->
-<section id="sec-manuel">
-  <div class="card">
-    <h2>Test manuel des actionneurs</h2>
-    <p class="note">⚠️ À utiliser banc hors procédure. Le moteur et les vannes répondent immédiatement ; le schéma se met à jour.</p>
-    <div class="row">
-      <button id="b_mot" onclick="act('motor', motOn?0:1)">Moteur : ?</button>
-      <button id="b_val" onclick="act('purge', valOn?0:1)">Purge : ?</button>
-    </div>
-    <h2 style="margin-top:.8rem">Configurations prédéfinies (matrice V0-V6)</h2>
-    <div class="row">
-      <button class="sec" onclick="act('cfg',0)">Gonflage</button>
-      <button class="sec" onclick="act('cfg',1)">Pulsation/mesure</button>
-      <button class="sec" onclick="act('cfg',2)">Banc seul</button>
-      <button class="sec" onclick="act('cfg',3)">Bras seul</button>
-      <button class="sec" onclick="act('cfg',4)">Lectures croisées</button>
-      <button class="sec" onclick="act('cfg',5)">Boyle</button>
-      <button class="sec" onclick="act('cfg',7)">Purge</button>
-      <button class="danger" onclick="act('cfg',6)">⛔ Stockage (tout fermé)</button>
-    </div>
-    <h2 style="margin-top:.8rem">Vannes individuelles</h2>
-    <div class="row" id="valvebtns"></div>
-  </div>
-</section>
-
-<!-- ================= SYSTEME ================= -->
-<section id="sec-sys">
-  <div class="card">
-    <h2>Paramètres système</h2>
-    <div id="sysgrid" style="display:flex;flex-wrap:wrap;gap:.5rem"></div>
-    <p class="note">Vcc mesuré via pont diviseur sur GPIO34 (100k/100k, facteur 2). T puce = capteur interne de l'ESP32
-    (indicatif : il monte pendant le WiFi/moteur, inquiétant seulement au-delà de ~80 °C). RSSI < -80 dBm = mauvaise portée.</p>
   </div>
 </section>
 
@@ -274,7 +173,137 @@
   </div>
 </section>
 
+<!-- ================= TEST MANUEL ================= -->
+<section id="sec-manuel">
+  <div class="card">
+    <h2>Test manuel des actionneurs</h2>
+    <p class="note">⚠️ À utiliser banc hors procédure. Le moteur et les vannes répondent immédiatement ; le schéma se met à jour.</p>
+    <div class="row">
+      <button id="b_mot" onclick="act('motor', motOn?0:1)">Moteur : ?</button>
+      <button id="b_val" onclick="act('purge', valOn?0:1)">Purge : ?</button>
+      <button class="sec" onclick="act('phaseref',1)">Repère came = fin d'aspiration</button>
+    </div>
+    <h2 style="margin-top:.8rem">Configurations prédéfinies (matrice V1-V6)</h2>
+    <div class="row">
+      <button class="sec" onclick="act('cfg',0)">Gonflage</button>
+      <button class="sec" onclick="act('cfg',1)">Pulsation/mesure</button>
+      <button class="sec" onclick="act('cfg',2)">Lectures croisées</button>
+      <button class="sec" onclick="act('cfg',3)">Boyle</button>
+      <button class="sec" onclick="act('cfg',4)">Purge</button>
+      <button class="danger" onclick="act('cfg',5)">⛔ Stockage (tout fermé)</button>
+    </div>
+    <h2 style="margin-top:.8rem">Vannes individuelles</h2>
+    <div class="row" id="valvebtns"></div>
+  </div>
+</section>
+
 </main>
+
+<!-- ============ SCHEMA PNEUMATIQUE TEMPS REEL (apres le menu) ============ -->
+<div class="card" id="svgcard" style="margin:0 1rem 1.5rem">
+  <h2>Schéma pneumatique — vannes et flux en temps réel</h2>
+  <svg viewBox="0 0 940 330" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif" font-size="11">
+    <rect x="0" y="0" width="940" height="330" fill="#fcfcfc"/>
+
+    <!-- ============ ENSEMBLE SOUS TEST (bleu, strictement d'origine) ============ -->
+    <rect x="15" y="28" width="270" height="150" rx="8" fill="#eaf2fb" stroke="#336699" stroke-width="1.5"/>
+    <text x="150" y="45" text-anchor="middle" fill="#336699" font-weight="bold" font-size="11">ENSEMBLE SOUS TEST (aucune intrusion)</text>
+    <rect x="30" y="55" width="110" height="62" rx="4" fill="#fff" stroke="#336699" stroke-width="2"/>
+    <rect x="42" y="65" width="86" height="26" fill="#ddffff"/>
+    <text x="85" y="82" text-anchor="middle" font-size="10">Écran</text>
+    <text x="85" y="110" text-anchor="middle" fill="#336699" font-weight="bold" font-size="12">Tensiomètre</text>
+    <line x1="85" y1="117" x2="85" y2="124" stroke="#336699" stroke-width="4"/>
+    <rect x="25" y="124" width="230" height="42" rx="6" fill="#ffffdd" stroke="#aa8800" stroke-width="2"/>
+    <text x="140" y="141" text-anchor="middle" fill="#a80" font-weight="bold" font-size="11">Brassard d'origine + bras butyle 1 m</text>
+    <text x="140" y="157" text-anchor="middle" font-size="9" fill="#555">accordéon ~16 cm Ø80 — filet — P_int = 100 mmHg</text>
+    <text x="150" y="130" text-anchor="middle" font-size="9" fill="#555"> </text>
+
+    <!-- Schrader / chuck, puis chaine de mesure (vert) jusqu'au noeud M -->
+    <line x1="255" y1="150" x2="293" y2="150" stroke="#00aa66" stroke-width="3"/>
+    <circle cx="300" cy="150" r="7" fill="#fff" stroke="#0a6" stroke-width="2"/>
+    <text x="300" y="133" text-anchor="middle" fill="#00aa66" font-size="9">Schrader / chuck</text>
+    <line x1="307" y1="150" x2="830" y2="150" stroke="#00aa66" stroke-width="3"/>
+
+    <!-- Noeud M + capteur ABP -->
+    <circle cx="440" cy="150" r="6" fill="#00aa66"/>
+    <text x="440" y="133" text-anchor="middle" fill="#00aa66" font-weight="bold" font-size="11">M</text>
+    <line x1="440" y1="144" x2="440" y2="97" stroke="#00aa66" stroke-width="3"/>
+    <rect x="360" y="45" width="160" height="52" rx="8" fill="#efe" stroke="#3a3" stroke-width="2"/>
+    <text x="440" y="66" text-anchor="middle" fill="#33aa33" font-weight="bold" font-size="12">Capteur ABP (étalon)</text>
+    <text x="440" y="84" text-anchor="middle" font-size="9" fill="#555">I2C 100 Hz — ABPDRRV040MG2A3</text>
+
+    <!-- Branche purge (V6) -->
+    <circle cx="520" cy="150" r="5" fill="#00aa66"/>
+    <line x1="520" y1="155" x2="520" y2="235" stroke="#555" stroke-width="3"/>
+    <circle id="vsc6" cx="520" cy="195" r="12" fill="#e0e0e0" stroke="#cc7733" stroke-width="2.5"/>
+    <line x1="511" y1="204" x2="529" y2="186" stroke="#cc7733" stroke-width="2.5"/>
+    <text x="520" y="222" text-anchor="middle" font-size="10" font-weight="bold" fill="#cc7733">V6 — purge atmo</text>
+    <text id="vst6" x="520" y="235" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+    <text x="520" y="262" text-anchor="middle" font-size="10" fill="#555">→ atmosphère</text>
+
+    <!-- V3 -> manometre aneroide -->
+    <circle id="vsc3" cx="580" cy="150" r="12" fill="#e0e0e0" stroke="#00aa66" stroke-width="2.5"/>
+    <line x1="571" y1="159" x2="589" y2="141" stroke="#00aa66" stroke-width="2.5"/>
+    <text x="580" y="180" text-anchor="middle" font-size="10" font-weight="bold" fill="#0a6">V3 — manomètre (S2)</text>
+    <text id="vst3" x="580" y="193" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+    <line x1="592" y1="150" x2="660" y2="150" stroke="#00aa66" stroke-width="3"/>
+    <rect x="660" y="125" width="170" height="50" rx="6" fill="#fff" stroke="#888" stroke-width="1.5"/>
+    <text x="745" y="145" text-anchor="middle" font-weight="bold" font-size="11">Manomètre anéroïde cl. 0,5</text>
+    <text x="745" y="161" text-anchor="middle" font-size="9" fill="#555">(tube Bourdon — isoler hors lectures)</text>
+
+    <!-- V1 -> pulsation directe -->
+    <circle id="vsc1" cx="760" cy="150" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
+    <line x1="751" y1="159" x2="769" y2="141" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="760" y="180" text-anchor="middle" font-size="10" font-weight="bold" fill="#ee8800">V1 — pulsation (S1-1)</text>
+    <text id="vst1" x="760" y="193" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+
+    <!-- Seringue + came -->
+    <line x1="772" y1="150" x2="805" y2="150" stroke="#333" stroke-width="3"/>
+    <rect x="805" y="128" width="110" height="44" rx="4" fill="#fff" stroke="#333" stroke-width="2"/>
+    <rect x="822" y="138" width="36" height="18" fill="#ccc"/>
+    <text x="860" y="118" text-anchor="middle" font-weight="bold" font-size="11">Seringue 50 mL</text>
+    <text x="860" y="186" text-anchor="middle" font-size="9" fill="#555">BD — course butée ~2 mL</text>
+    <circle cx="925" cy="150" r="22" fill="#fff" stroke="#555" stroke-width="2"/>
+    <circle cx="925" cy="150" r="4" fill="#555"/>
+    <circle cx="935" cy="140" r="5" fill="#e80"/>
+    <text x="915" y="192" text-anchor="middle" font-size="9" fill="#555">Came 60 tr/min · NEMA17 + TMC2209</text>
+
+    <!-- Branche clapets (orange) : V5 / CV2 / noeud B / CV1 / V2 -->
+    <circle cx="660" cy="150" r="5" fill="#ee8800"/>
+    <line x1="660" y1="155" x2="660" y2="265" stroke="#ee8800" stroke-width="3"/>
+    <circle id="vsc5" cx="660" cy="185" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
+    <line x1="651" y1="194" x2="669" y2="176" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="660" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#ee8800">V5 — clapets (S4-1)</text>
+    <text id="vst5" x="660" y="228" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+    <polygon points="652,255 668,255 660,240" fill="#fff" stroke="#ee8800" stroke-width="2"/>
+    <line x1="652" y1="238" x2="668" y2="238" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="678" y="248" font-size="10" fill="#ee8800" font-weight="bold">CV2</text>
+    <circle cx="660" cy="265" r="5" fill="#ee8800"/>
+    <line x1="660" y1="265" x2="800" y2="265" stroke="#ee8800" stroke-width="3"/>
+    <text x="612" y="288" text-anchor="middle" font-size="10" fill="#ee8800" font-weight="bold">CV1</text>
+    <polygon points="596,257 596,273 612,265" fill="#fff" stroke="#ee8800" stroke-width="2"/>
+    <line x1="614" y1="257" x2="614" y2="273" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="545" y="269" font-size="10" fill="#ee8800">atmosphère</text>
+    <circle cx="800" cy="150" r="5" fill="#ee8800"/>
+    <line x1="800" y1="155" x2="800" y2="265" stroke="#ee8800" stroke-width="3"/>
+    <circle id="vsc2" cx="800" cy="185" r="12" fill="#e0e0e0" stroke="#ee8800" stroke-width="2.5"/>
+    <line x1="791" y1="194" x2="809" y2="176" stroke="#ee8800" stroke-width="2.5"/>
+    <text x="800" y="215" text-anchor="middle" font-size="10" font-weight="bold" fill="#ee8800">V2 — pompe (S1-2)</text>
+    <text id="vst2" x="800" y="228" text-anchor="middle" font-size="9" fill="#546e7a">FERMÉE</text>
+
+    <!-- ESP32 + liaisons electriques (tirets) -->
+    <rect x="25" y="272" width="220" height="44" rx="8" fill="#eeffee" stroke="#336699" stroke-width="2"/>
+    <text x="135" y="290" text-anchor="middle" fill="#336699" font-weight="bold" font-size="12">ESP32-S3 — serveur web</text>
+    <text x="135" y="306" text-anchor="middle" fill="#336699" font-size="9">moteur · vannes · I2C · WiFi · rapports</text>
+    <line x1="925" y1="172" x2="925" y2="300" stroke="#336699" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <line x1="925" y1="300" x2="250" y2="300" stroke="#336699" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <line x1="520" y1="240" x2="520" y2="255" stroke="#cc7733" stroke-width="0"/>
+    <line x1="560" y1="262" x2="480" y2="292" stroke="#336699" stroke-width="1.2" stroke-dasharray="3,3"/>
+
+    <!-- Legende -->
+    <text x="470" y="322" text-anchor="middle" font-size="10" fill="#555">Vert : chaîne de mesure · Orange : mode pompe (contourné en mesure) · Bleu : ensemble sous test · ● jonction · fond vert clair = vanne OUVERTE, fond gris = FERMÉE</text>
+  </svg>
+</div>
 
 <!-- Modal d'approbation d'etape -->
 <div id="modal"><div class="box">
@@ -289,8 +318,8 @@
 <script>
 function el(s){ return document.querySelector(s); }
 var motOn=false, valOn=false, curValves=[false,false,false,false,false,false,false];
-var VN = ['V0 série','V1 pulsation','V2 pompe','V3 manomètre','V4 bras','V5 clapets','V6 purge'];
-var stepTitle='';
+var VN = ['V1 pulsation','V2 pompe','V3 manomètre','V5 clapets','V6 purge'];   // vannes du banc (v1.8)
+var VID = [1,2,3,5,6];                                                          // indices dans status.valves[0..6]
 
 function showSec(id){
   var secs=document.querySelectorAll('section');
@@ -300,7 +329,7 @@ function showSec(id){
 
 function chips(vs){
   var h='';
-  for (var i=0;i<7;i++) h += '<span class="vchip '+(vs[i]?'o':'f')+'">'+VN[i]+' '+(vs[i]?'ouverte':'fermée')+'</span>';
+  for (var i=0;i<5;i++) h += '<span class="vchip '+(vs[VID[i]]?'o':'f')+'">'+VN[i]+' '+(vs[VID[i]]?'ouverte':'fermée')+'</span>';
   return h;
 }
 function fmtUp(s){ var h=Math.floor(s/3600), m=Math.floor(s%3600/60); return h+' h '+String(m).padStart(2,'0'); }
@@ -321,34 +350,34 @@ async function poll(){
     el('#m_val').textContent=s.valve?'OUVERTE':'FERMÉE';
     el('#m_cfg').textContent=s.cfg||'—';
     el('#m_step').textContent=s.step||0;
+    el('#m_leak').textContent = (s.armLeak>=0) ? s.armLeak.toFixed(2)+' mmHg/min' : '—';
+    el('#m_leak').className='v'+((s.armLeak>=1.0)?' warn':'');
     el('#m_temp').textContent=(s.chipTemp||0).toFixed(0)+' °C';
     var v = s.vcc||0;
     el('#m_vcc').textContent = v>0 ? (v/1000).toFixed(2)+' V' : 'n/c';
     el('#m_vcc').className='v'+(v>0&&v<4500?' warn':'');
-    // SVG
-    for (var i=0;i<7;i++){
-      var o=s.valves[i];
-      var r=document.getElementById('vrect'+i), t=document.getElementById('vst'+i);
-      if(r) r.setAttribute('fill', o?'#a5d6a7':'#cfd8dc');
+    // SVG : 5 stopcocks (V1,V2,V3,V5,V6)
+    for (var k=0;k<5;k++){
+      var id=VID[k], o=s.valves[id];
+      var c=document.getElementById('vsc'+id), t=document.getElementById('vst'+id);
+      if(c) c.setAttribute('fill', o?'#a5d6a7':'#e0e0e0');
       if(t){ t.textContent=o?'OUVERTE':'FERMÉE'; t.setAttribute('fill', o?'#1b5e20':'#546e7a'); }
     }
-    el('#svg_p').textContent=s.pressure.toFixed(1)+' mmHg';
-    el('#svg_cfg').textContent=s.cfg||'—';
-    el('#pumpst').textContent=s.motor?'ON (60 bpm)':'OFF';
-    el('#pumpbox').setAttribute('stroke', s.motor?'#2e7d32':'#35589e');
     // Boutons manuel
     el('#b_mot').textContent='Moteur : '+(s.motor?'ON':'OFF');
     el('#b_mot').className=s.motor?'on':'';
     el('#b_val').textContent='Purge : '+(s.valve?'OUVERTE':'FERMÉE');
     el('#b_val').className=s.valve?'on':'sec';
     var vh='';
-    for (var j=0;j<7;j++) vh += '<button class="'+(s.valves[j]?'on':'sec')+'" onclick="act(\'v'+j+'\','+(s.valves[j]?0:1)+')">'+VN[j]+' : '+(s.valves[j]?'ouvrir':'fermer')+'</button>';
+    for (var j=0;j<5;j++) vh += '<button class="'+(s.valves[VID[j]]?'on':'sec')+'" onclick="act(\'v'+VID[j]+'\','+(s.valves[VID[j]]?0:1)+')">'+VN[j]+' : '+(s.valves[VID[j]]?'fermer':'ouvrir')+'</button>';
     el('#valvebtns').innerHTML=vh;
     // Systeme
     var g='<div class="metric"><div class="k">T puce</div><div class="v">'+(s.chipTemp||0).toFixed(1)+' °C</div></div>'+
           '<div class="metric"><div class="k">Vcc</div><div class="v">'+(v>0?(v/1000).toFixed(3)+' V':'n/c')+'</div></div>'+
           '<div class="metric"><div class="k">Uptime</div><div class="v">'+fmtUp(s.uptime||0)+'</div></div>'+
           '<div class="metric"><div class="k">RSSI WiFi</div><div class="v">'+(s.rssi||0)+' dBm</div></div>'+
+          '<div class="metric"><div class="k">A0 bench zéro</div><div class="v">'+((s.seatS0>=0)?s.seatS0.toFixed(2):'—')+'</div></div>'+
+          '<div class="metric"><div class="k">A1 branche</div><div class="v">'+((s.seatBranch>=0)?s.seatBranch.toFixed(2):'—')+'</div></div>'+
           '<div class="metric"><div class="k">Firmware</div><div class="v">v'+s.version+'</div></div>';
     el('#sysgrid').innerHTML=g;
     // Modal
