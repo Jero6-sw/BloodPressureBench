@@ -2,6 +2,7 @@
 
 
 
+
 /*
  * Banc de test - derive d'un ensemble tensiometre + brassard
  * Firmware ESP32-WROOM-32 - voir README_FR.md / README_EN.md a la racine du depot.
@@ -23,6 +24,7 @@
 #include "src/config.h"
 #include "src/peripherals.h"
 #include "src/procedure.h"
+#include "src/valves.h"
 #include "src/web_server.h"
 #include "src/mqtt_link.h"
 #include "src/provision.h"
@@ -55,10 +57,15 @@ void setup() {
   pinMode(PIN_STEP, OUTPUT);
   pinMode(PIN_DIR,  OUTPUT);
   pinMode(PIN_EN,   OUTPUT);
-  pinMode(PIN_VALVE, OUTPUT);
   digitalWrite(PIN_DIR, LOW);
   motorRun(false);
-  valveSet(false);
+  valvesInit();     // electrovannes V0-V6 : broches ULN2803 + etat de securite (stockage)
+  valveSet(false);  // purge fermee + etat UI coherent
+
+#if PIN_VCC_SENSE >= 0
+  pinMode(PIN_VCC_SENSE, INPUT);                       // surveillance tension alim
+  analogSetPinAttenuation(PIN_VCC_SENSE, ADC_11db);   // pleine echelle au niveau GPIO
+#endif
 
   // Capteur ABP present ?
   BPB_BenchState.abpOk = abpPresent();

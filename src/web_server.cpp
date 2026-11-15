@@ -4,10 +4,12 @@
 
 
 
+
 #include "web_server.h"
 #include "config.h"
 #include "peripherals.h"
 #include "procedure.h"
+#include "valves.h"
 #include "mqtt_link.h"
 #include "provision.h"
 
@@ -31,6 +33,13 @@ void sendJson() {
   d["step"] = BPB_BenchState.step;
   d["approval"] = BPB_BenchState.waitingApproval;
   d["approvalMsg"] = BPB_BenchState.approvalMsg;
+  JsonArray vs = d.createNestedArray("valves");
+  for (int v = 0; v < 7; v++) vs.add(valveIsOpen(v));    // etat OUVERT des 7 electrovannes
+  d["cfg"] = valvesCurrentName();                        // configuration pneumatique en cours
+  d["chipTemp"] = BPB_BenchState.chipTempC;              // temperature du chip (degC)
+  d["vcc"] = BPB_BenchState.vccmV;                       // tension alim (mV, pont diviseur)
+  d["uptime"] = (uint32_t)(millis() / 1000);
+  d["rssi"] = WiFi.RSSI();
   String o;
   serializeJson(d, o);
   BPB_WebServer.send(200, "application/json", o);
@@ -79,6 +88,20 @@ void handleReport() {
   String o;
   serializeJson(d, o);
   BPB_WebServer.send(200, "application/json", o);
+}
+
+// ---------- POST /api/actuator : pilotage manuel (test banc) ----------
+// {key:"motor"|"purge"|"cfg", value:0/1|0..7} ou {key:"v0".."v6", value:0/1}
+void handleActuator() {
+  StaticJsonDocument<256> d;
+  deserializeJson(d, BPB_WebServer.arg("plain"));
+  const char* k = d["key"] | "";
+  int v = d["value"] | 0;
+  if      (!strcmp(k, "motor")) motorRun(v != 0);
+  else if (!strcmp(k, "purge")) valveSet(v != 0);
+  else if (!strcmp(k, "cfg"))   valvesApply((BenchConfig)constrain(v, 0, N_CONFIGS - 1));
+  else if (k[0] == 'v' && k[1] >= '0' && k[1] <= '6' && k[2] == 0) valveDrive(k[1] - '0', v != 0);
+  BPB_WebServer.send(200, "application/json", "{}");
 }
 
 // ---------- Endpoints de procedure ----------
@@ -178,6 +201,7 @@ void setupServer() {
   BPB_WebServer.on("/api/mqtt",    HTTP_POST, handleMqttConfig);    // NVS : broker + CA TLS + cle AES
   BPB_WebServer.on("/api/config",  HTTP_GET,  handleGetConfig);     // NVS : lecture (sans secrets)
   BPB_WebServer.on("/api/reset",   HTTP_POST, handleResetConfig);   // NVS : effacement -> AP
+  BPB_WebServer.on("/api/actuator", HTTP_POST, handleActuator);    // test manuel : moteur, purge, vannes
   // Racine explicite : serveStatic ne sert par defaut que "index.htm" a la
   // racine (et notre fichier s'appelle index.html) -> handler dedie, avec
   // diagnostic clair si la partition LittleFS n'a pas ete flashee.

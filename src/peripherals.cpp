@@ -1,8 +1,10 @@
 
 
 
+
 #include "peripherals.h"
 #include "config.h"
+#include "valves.h"
 #include <Wire.h>
 
 BenchState BPB_BenchState;   // instance unique ; declaree extern dans peripherals.h
@@ -26,7 +28,8 @@ bool abpPresent() {
 
 // ================= ACTIONNEURS =================
 void motorRun(bool on)  { BPB_BenchState.motorOn  = on;  digitalWrite(PIN_EN,    on ? LOW  : HIGH); }
-void valveSet(bool open){ BPB_BenchState.valveOpen = open; digitalWrite(PIN_VALVE, open ? HIGH : LOW); }
+// Purge (V6) : passe par le module valves pour garder l'etat coherent (affichage SVG)
+void valveSet(bool open){ BPB_BenchState.valveOpen = open; valveDrive(6, open); }
 
 // ================= ACQUISITION (coeur 0) =================
 // - genere les pas du moteur a 313 us (60 tr/min = 60 bpm) quand le moteur tourne ;
@@ -60,6 +63,13 @@ void acquisitionTask(void*) {
         BPB_BenchState.ratio = (rise > 0 && rise < 1000) ? rise / (1000 - rise) : 99;
         pMin = 1e9; pMax = -1e9;
         lastPulse = ms;
+        // Diagnostics systeme (1 Hz) : temperature du chip + tension alim
+        BPB_BenchState.chipTempC = temperatureRead();
+#if PIN_VCC_SENSE >= 0
+        BPB_BenchState.vccmV = analogReadMilliVolts(PIN_VCC_SENSE) * VCC_DIVIDER;
+#else
+        BPB_BenchState.vccmV = 0;
+#endif
       }
     }
     vTaskDelay(1);

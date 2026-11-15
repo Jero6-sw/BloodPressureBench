@@ -1,5 +1,6 @@
 
 
+
 #ifndef PERIPHERALS_H
 #define PERIPHERALS_H
 
@@ -12,6 +13,7 @@ struct BenchState {
   float amp = 0, ratio = 1;           // dernier pulse : crete-a-crete + rapport montee/descente
   // Actionneurs
   bool  motorOn = false, valveOpen = false, abpOk = false;
+  float chipTempC = 0, vccmV = 0;          // diagnostics systeme : temperature du chip, tension alim (mV)
   // Procedure
   int   step = 0;
   bool  waitingApproval = false;

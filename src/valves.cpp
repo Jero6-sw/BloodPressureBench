@@ -1,4 +1,3 @@
-
 #include "valves.h"
 #include "config.h"
 #include "peripherals.h"
@@ -15,31 +14,38 @@ static const ValveDef VDEF[7] = {
   {PIN_V6, false, "V6 purge"     },
 };
 static bool energized[7] = {false, false, false, false, false, false, false};
+static bool openState [7] = {false, false, false, false, false, false, false};
+static int  curCfg = -1;                    // derniere configuration appliquee
 
 static void drive(int v, bool open) {
   // NO : ouvert = de-energise ; NC : ouvert = energise
-  energized[v] = VDEF[v].no ? !open : open;
+  energized[v]  = VDEF[v].no ? !open : open;
+  openState[v]  = open;
   digitalWrite(VDEF[v].pin, energized[v] ? HIGH : LOW);
 }
+
+void valveDrive(int v, bool open) { if (v >= 0 && v < 7) drive(v, open); }
+bool valveIsOpen(int v)          { return (v >= 0 && v < 7) && openState[v]; }
 
 void valvesInit() {
   for (int v = 0; v < 7; v++) {
     pinMode(VDEF[v].pin, OUTPUT);
     digitalWrite(VDEF[v].pin, LOW);       // de-energise partout
-    energized[v] = false;
+    energized[v] = false; openState[v] = false;
   }
   valvesApply(CFG_STORAGE);               // etat de securite au demarrage
 }
 
-const char* valvesConfigName(BenchConfig cfg) {
-  static const char* names[N_CONFIGS] = {
-    "Gonflage (pompe)", "Pulsation/mesure", "Banc seul", "Bras seul",
-    "Lectures croisees", "Boyle", "Stockage", "Purge"
-  };
-  return names[cfg];
-}
+static const char* cfgNames[N_CONFIGS] = {
+  "Gonflage (pompe)", "Pulsation/mesure", "Banc seul", "Bras seul",
+  "Lectures croisees", "Boyle", "Stockage", "Purge"
+};
+
+const char* valvesConfigName(BenchConfig cfg) { return cfgNames[cfg]; }
+const char* valvesCurrentName() { return (curCfg >= 0 && curCfg < N_CONFIGS) ? cfgNames[curCfg] : "Manuel"; }
 
 void valvesApply(BenchConfig cfg) {
+  curCfg = cfg;
   switch (cfg) {
     case CFG_INFLATE:   // S1 2 / S2 2 / S3 1 / S4 1
       drive(0, true); drive(1, false); drive(2, true);
@@ -67,10 +73,12 @@ void valvesApply(BenchConfig cfg) {
     case CFG_PURGE:     // degonflage : vanne atmo ouverte, bras raccorde
       drive(0, true); drive(1, false); drive(2, false);
       drive(3, false); drive(4, true); drive(5, false); drive(6, true);
+      BPB_BenchState.valveOpen = true;
       break;
     case CFG_STORAGE:   // tout ferme/isole
     default:
       for (int v = 0; v < 7; v++) drive(v, false);
+      BPB_BenchState.valveOpen = false;
       break;
   }
 }

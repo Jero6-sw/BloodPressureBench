@@ -1,25 +1,28 @@
 #include "procedure.h"
 #include "config.h"
+#include "valves.h"
 
 // ---------- Etapes de l'auto-diagnostic (README_FR 8 a) ----------
+// cfg = configuration d'electrovannes appliquee AUTOMATIQUEMENT au debut de
+// l'etape (V0-V6) : l'operateur n'a plus de manip pneumatique manuelle.
 const BPB_Step CALIB[] = {
-  {"Montage",         "Bras sur filet, chuck verrouille. S3 (1) OUVERT, S1 (2) POMPE, S4 (1) OUVERT, S2 (2) FERME.", 'M'},
-  {"Gonflage",        "Moteur ON en S1 (2)/S4 (1) - arret auto a 100 +/- 2 mmHg (ABP).", 'A'},
-  {"Controle P_int",  "S2 (1) OUVERT, lire le manometre aneroide, saisir la valeur, S2 (2) FERME.", 'M'},
-  {"Etancheite banc", "S3 (2) FERME : montee a 150 mmHg, pente 60 s (< 1 mmHg/min).", 'A'},
-  {"Etancheite bras", "S1 (3) 45 degres + S3 (1) OUVERT : bras seul, pente 60 s (< 1 mmHg/min).", 'A'},
-  {"Zero etalons",    "Purge (V6) OUVERTE : capture auto de l'offset electronique ABP ; verifier l'aiguille aneroide dans l'ovale zero. Fermer la purge.", 'A'},
-  {"Linearite",       "Paliers 50/100/150 : a chaque palier S2 (1) OUVERT, saisir la lecture aneroide. Signature D(P)=aneroide-ABP : constante=offset, proportionnelle=gain, non lineaire=mecanisme aneroide.", 'M'},
-  {"Volume+Gain (Boyle)", "S1 (3) + S2 (1) + S3 (1) + S4 (2), seringue 10 mL sur port S2 : injecter 10 mL, [VALIDER] (deltaP -> V et gain ABP : deltaP attendu = P*10/(V-10), ecart > 1,5 mmHg = derive electronique), retirer la seringue, S2 (2) FERME.", 'M'},
-  {"Amplitude",       "S1 (1) PULSATION + S4 (2) FERME, moteur ON : lecture auto amplitude + forme sur 4 s. Ajuster la butee si hors cible.", 'A'},
+  {"Montage",         "Bras sur filet, chuck verrouille. Vannes automatiques : le banc passe en configuration Gonflage (V0,V2,V4,V5 ouvertes).", 'M', CFG_INFLATE},
+  {"Gonflage",        "Moteur ON en configuration Gonflage - arret auto a 100 +/- 2 mmHg (ABP).", 'A', CFG_INFLATE},
+  {"Controle P_int",  "Vannes automatiques : Lecteurs croisees (V3+V4 ouvertes). Lire le manometre aneroide, saisir la valeur.", 'M', CFG_GAUGE},
+  {"Etancheite banc", "Vannes automatiques : Banc seul (V4 fermee). Montee a 150 mmHg puis pente 60 s (< 1 mmHg/min).", 'A', CFG_BENCH_ONLY},
+  {"Etancheite bras", "Vannes automatiques : Bras seul (V0..V3,V5 fermees, V4 ouverte). Pente 60 s (< 1 mmHg/min).", 'A', CFG_ARM_ONLY},
+  {"Zero etalons",    "Vannes automatiques : Purge (V6 OUVERTE). Capture auto de l'offset electronique ABP ; verifier l'aiguille aneroide dans l'ovale zero. La purge se ferme a la fin de l'etape.", 'A', CFG_PURGE},
+  {"Linearite",       "Vannes automatiques : Lectures croisees (V3+V4). Paliers 50/100/150 : saisir la lecture aneroide a chaque palier. Signature D(P)=aneroide-ABP.", 'M', CFG_GAUGE},
+  {"Volume+Gain (Boyle)", "Vannes automatiques : Boyle (V3+V4 ouvertes, V0 ferme). Seringue 10 mL sur port S2 : injecter 10 mL, [VALIDER] (deltaP -> V et gain ABP), retirer la seringue.", 'M', CFG_BOYLE},
+  {"Amplitude",       "Vannes automatiques : Pulsation/mesure (V1 ouverte, V5 fermee). Moteur ON : lecture auto amplitude + forme sur 4 s. Ajuster la butee si hors cible.", 'A', CFG_MEASURE},
 };
 const int N_CALIB = sizeof(CALIB) / sizeof(CALIB[0]);
 
 // ---------- Etapes de la procedure de test (README_FR 8 b) ----------
 const BPB_Step TESTS[] = {
-  {"Pret",    "S1 (1) PULSATION + S4 (2) FERME, S3 (1) OUVERT, moteur ON (60 bpm). Lancer la mesure sur le tensiometre.", 'M'},
-  {"Mesures", "Saisir la valeur affichee par le tensiometre - x5, 30 s d'intervalle.", 'M'},
-  {"Fin",     "Moteur OFF, S1 (3), vanne ouverte jusqu'a 0 mmHg, S3 (2), S4 (2), deverrouiller le chuck.", 'M'},
+  {"Pret",    "Vannes automatiques : Pulsation/mesure. Moteur ON (60 bpm). Lancer la mesure sur le tensiometre.", 'M', CFG_MEASURE},
+  {"Mesures", "Saisir la valeur affichee par le tensiometre - x5, 30 s d'intervalle.", 'M', CFG_MEASURE},
+  {"Fin",     "Vannes automatiques : Purge (degonflage a 0 mmHg), puis Stockage (tout isole). Deverrouiller le chuck.", 'M', CFG_PURGE},
 };
 const int N_TESTS = sizeof(TESTS) / sizeof(TESTS[0]);
 
@@ -33,14 +36,13 @@ static const BPB_Step* getStep(int i) { return (curTable && i < curLen) ? &curTa
 // Aucun delay()/while bloquant : procedureTick() (appele dans loop()) fait
 // avancer les phases. Le serveur web et l'interface restent reactifs pendant
 // les mesures de 60 s, et un capteur absent ne fige plus l'ESP32.
-// Phases : 0 = rien a faire ; 1/2 = sous-phases de l'etape auto en cours.
 static uint32_t autoT0    = 0;    // debut de la sous-phase
 static float    autoP0    = 0;    // pression de reference (pentes de fuite)
-static char     autoPhase = 0;
+static char     autoPhase = 0;   // 0 = rien ; 1/2 = sous-phases en cours
 
 static void autoFinish(const char* msg) {
   motorRun(false);                 // etat de securite systematique
-  valveSet(false);
+  valveSet(false);                 // purge fermee
   strlcpy(BPB_BenchState.approvalMsg, msg, sizeof(BPB_BenchState.approvalMsg));
   BPB_BenchState.waitingApproval = true;   // l'operateur valide le resultat
   autoPhase = 0;
@@ -59,12 +61,14 @@ void procedureAdvance() {
   procedureRunAuto(BPB_BenchState.step);
 }
 
-// Lance l'etape automatique idx : initialise la phase 1 (actions instantanees
-// uniquement), la suite est pilotee par procedureTick().
+// Lance l'etape idx : applique la configuration d'electrovannes de l'etape,
+// initialise la phase 1 (actions instantanees uniquement), la suite est
+// pilotee par procedureTick().
 void procedureRunAuto(int idx) {
   const BPB_Step* st = getStep(idx);
   if (!st) return;
   strlcpy(BPB_BenchState.approvalMsg, st->instr, sizeof(BPB_BenchState.approvalMsg));
+  if (st->cfg >= 0 && st->cfg < N_CONFIGS) valvesApply((BenchConfig)st->cfg);   // electrovannes
   if (st->type == 'M') { BPB_BenchState.waitingApproval = true; return; }   // l'operateur doit confirmer
 
   if (curTable != CALIB) { BPB_BenchState.waitingApproval = true; return; }
@@ -74,7 +78,7 @@ void procedureRunAuto(int idx) {
     case 1:                                   // gonflage a 100 mmHg
     case 3:                                   // montee a 150 mmHg puis pente
       if (!BPB_BenchState.abpOk) {            // capteur absent : pas de boucle infinie
-        autoFinish("Capteur ABP absent : etape d'etonnage/gonflage annulee (brancher le capteur puis relancer la procedure).");
+        autoFinish("Capteur ABP absent : etape de gonflage/etancheite annulee (brancher le capteur puis relancer la procedure).");
         return;
       }
       motorRun(true);
@@ -82,8 +86,7 @@ void procedureRunAuto(int idx) {
     case 4:                                   // pente bras seul : reference immediatement
       autoP0 = BPB_BenchState.pressure;
       break;
-    case 5:                                   // zero a l'air libre : purge ouverte 3 s
-      valveSet(true);
+    case 5:                                   // zero a l'air libre : purge ouverte par CFG_PURGE
       break;
     case 8:                                   // pulsation 4 s
       motorRun(true);
@@ -136,7 +139,7 @@ void procedureTick() {
       }
       break;
 
-    case 5:   // zero : capture apres 3 s de purge ouverte
+    case 5:   // zero : capture apres 3 s de purge ouverte (CFG_PURGE applique)
       if (autoPhase == 1 && dT >= 3000UL) {
         BPB_BenchState.zeroOffset = BPB_BenchState.pressure;   // offset electronique (mmHg)
         autoFinish("Zero ABP capture. Verifier l'aiguille aneroide dans l'ovale zero puis valider.");

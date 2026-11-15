@@ -5,11 +5,12 @@
 
 
 
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
 // ---------- Identification ----------
-#define FW_VERSION   "1.6.2-banc"
+#define FW_VERSION   "1.7.0-banc"
 
 // ---------- Capteur ABP (Honeywell ABPDRRV040MG2A3, 0-40 kPa, I2C) ----------
 #define ABP_ADDR     0x28
@@ -24,7 +25,11 @@
 #define PIN_STEP     4
 #define PIN_DIR      5
 #define PIN_EN       23             // actif bas (TMC2209)
-#define PIN_VALVE    33             // vanne de purge (V6)
+#define PIN_VALVE    33             // vanne de purge (V6) = PIN_V6 (electrovannes)
+
+// ---------- Surveillance systeme ----------
+#define PIN_VCC_SENSE  34             // pont diviseur (ex. 100k/100k) sur l'alim 5 V ; -1 si non cable
+#define VCC_DIVIDER    2.0f           // rapport du pont (Valim = Vgpio * VCC_DIVIDER)
 
 // ---------- Electrovannes 2/2 (variante automatisee, voir docs/automatisation-electrovannes.md) ----------
 // Vannes DIRECT-ACTIONNEES des 0 bar obligatoire (circuit a 0,04 MPa max).

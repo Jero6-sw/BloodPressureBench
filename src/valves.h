@@ -11,7 +11,7 @@
 //   V3 (NC)  manometre <-> noeud M             : ouverte = S2 1 (lectures croisees)
 //   V4 (NC)  bras <-> banc                     : ouverte = S3 1 (usage normal)
 //   V5 (NO)  ligne CV2 <-> M                   : ouverte = S4 1 (mode pompe uniquement)
-//   V6 (NC)  purge atmosphere                  : ouverte = degonflage
+//   V6 (NC)  purge atmosphere                   : ouverte = degonflage
 //
 // Une vanne NO doit etre ENERGISEE pour se fermer : pendant la mesure
 // (PULSATION), V0/V1/V5/V6 sont de-energisees -> zero watt, pas d'echauffement
@@ -32,7 +32,10 @@ enum BenchConfig {
 void valvesInit();                     // broches + etat de securite (stockage)
 void valvesApply(BenchConfig cfg);     // applique une configuration de la matrice
 const char* valvesConfigName(BenchConfig cfg);
+const char* valvesCurrentName();       // nom de la derniere configuration appliquee
 bool valveIsEnergized(int v);          // 0..6
+bool valveIsOpen(int v);               // 0..6 : etat OUVERT (affichage SVG)
+void valveDrive(int v, bool open);     // pilotage individuel (test manuel)
 
 // Auto-test d'isolement : ferme la vanne v, gonfle le segment amont a p0,
 // mesure la pente de fuite (mmHg/min) cote amont. Retourne false si fuite.

@@ -1,5 +1,6 @@
 
 
+
 #ifndef PROCEDURE_H
 #define PROCEDURE_H
 
@@ -11,7 +12,8 @@
 // Les positions S1/S2/S3/S4 utilisent la numerotation officielle du
 // document d'architecture (README_FR, section 3 a) :
 //   S1 : 1 PULSATION / 2 POMPE / 3 45 degres ; S2/S3/S4 : 1 OUVERT / 2 FERME.
-struct BPB_Step { const char* title; const char* instr; char type; };  // A=auto, M=manuel
+struct BPB_Step { const char* title; const char* instr; char type; signed char cfg; };
+// type : A=auto, M=manuel ; cfg : configuration d'electrovannes (valves.h) appliquee au debut de l'etape, -1 = inchangee
 
 extern const BPB_Step CALIB[];   // auto-diagnostic (README_FR 8 a)
 extern const BPB_Step TESTS[];   // procedure de test (README_FR 8 b)
