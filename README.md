@@ -8,3 +8,6 @@ Banc de test automatisé DIY — suivi de la dérive dans le temps d'un ensemble
 - ⚙️ Variante robinets automatisés (électrovannes 2/2) : [docs/automatisation-electrovannes.md](docs/automatisation-electrovannes.md)
 
 **Principle**: submit the monitor + cuff assembly to a rigorously reproducible mechanical stimulus — an artificial "arm" whose parameters do not age. An identical stimulus must produce an identical response: any variation over time = drift of the assembly under test.
+
+Projet Arduino pour ESP32-WROOM. Ne pas oublier le téléchargement des datas avec l'outil 'Upload LittleFS to ESP32'
+
