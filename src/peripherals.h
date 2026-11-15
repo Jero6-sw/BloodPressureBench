@@ -1,6 +1,7 @@
 
 
 
+
 #ifndef PERIPHERALS_H
 #define PERIPHERALS_H
 
@@ -14,6 +15,13 @@ struct BenchState {
   // Actionneurs
   bool  motorOn = false, valveOpen = false, abpOk = false;
   float chipTempC = 0, vccmV = 0;          // diagnostics systeme : temperature du chip, tension alim (mV)
+  // Maintenance des sieges (v1.8) : pentes mmHg/min, -1 = non mesure
+  float seatS0 = -1;        // A0 : pente bench zero (sieges V1+V3+V6)
+  float seatArm = -1;       // B  : pente bras connecte
+  float armLeak = -1;       // fuite bras deduite = seatArm - seatS0
+  float seatBranch = -1;    // A1 : pente branche clapets (signee)
+  volatile int32_t motorPhase = 0;        // position dans le cycle de came (0..CYCLE-1)
+  volatile int32_t motorPhaseTarget = -1; // cible d'arret sur phase (-1 = libre)
   // Procedure
   int   step = 0;
   bool  waitingApproval = false;
@@ -36,6 +44,9 @@ bool  abpPresent();                   // test de reponse I2C
 
 // ---------- Actionneurs ----------
 void motorRun(bool on);               // enable du TMC2209
+void motorSetPhaseRef();              // definir la position actuelle = fin d'aspiration (phase 0)
+void motorStepToPhase(int32_t target);// tourner jusqu'a la phase cible puis stop auto
+bool  motorPhaseBusy();               // arret sur phase en cours ?
 void valveSet(bool open);             // electrovanne de purge
 
 // ---------- Acquisition ----------

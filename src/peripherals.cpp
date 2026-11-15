@@ -2,6 +2,7 @@
 
 
 
+
 #include "peripherals.h"
 #include "config.h"
 #include "valves.h"
@@ -27,6 +28,12 @@ bool abpPresent() {
 }
 
 // ================= ACTIONNEURS =================
+// Reference de phase came : appelee quand l'operateur a pose manuellement la
+// came sur le repere FIN D'ASPIRATION (moteur OFF). Ensuite le comptage des
+// pas (acquisitionTask) suit la phase de facon deterministe.
+void motorSetPhaseRef()  { BPB_BenchState.motorPhase = 0; }
+void motorStepToPhase(int32_t target) { BPB_BenchState.motorPhaseTarget = target; motorRun(true); }
+bool  motorPhaseBusy()   { return BPB_BenchState.motorPhaseTarget >= 0; }
 void motorRun(bool on)  { BPB_BenchState.motorOn  = on;  digitalWrite(PIN_EN,    on ? LOW  : HIGH); }
 // Purge (V6) : passe par le module valves pour garder l'etat coherent (affichage SVG)
 void valveSet(bool open){ BPB_BenchState.valveOpen = open; valveDrive(6, open); }
@@ -47,6 +54,11 @@ void acquisitionTask(void*) {
       lastStep = us;
       digitalWrite(PIN_STEP, HIGH);
       digitalWrite(PIN_STEP, LOW);
+      BPB_BenchState.motorPhase = (BPB_BenchState.motorPhase + 1) % MOTOR_CYCLE_USTEPS;
+      if (BPB_BenchState.motorPhaseTarget >= 0 && BPB_BenchState.motorPhase == BPB_BenchState.motorPhaseTarget) {
+        BPB_BenchState.motorPhaseTarget = -1;   // phase cible atteinte : stop propre
+        motorRun(false);
+      }
     }
     unsigned long ms = millis();
     if (ms - lastLog >= ACQ_PERIOD_MS) {          // 100 Hz

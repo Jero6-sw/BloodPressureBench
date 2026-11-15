@@ -5,6 +5,7 @@
 
 
 
+
 #include "web_server.h"
 #include "config.h"
 #include "peripherals.h"
@@ -85,6 +86,10 @@ void handleReport() {
   d["zeroOffset"] = BPB_BenchState.zeroOffset;
   d["gainErrPct"] = BPB_BenchState.gainErrPct;
   d["patient"] = BPB_BenchState.patientName;
+  d["seatS0"] = BPB_BenchState.seatS0;          // pente bench zero (A0)
+  d["seatArm"] = BPB_BenchState.seatArm;        // pente bras (B)
+  d["armLeak"] = BPB_BenchState.armLeak;        // fuite bras deduite
+  d["seatBranch"] = BPB_BenchState.seatBranch;  // pente branche clapets (A1)
   String o;
   serializeJson(d, o);
   BPB_WebServer.send(200, "application/json", o);
@@ -100,6 +105,7 @@ void handleActuator() {
   if      (!strcmp(k, "motor")) motorRun(v != 0);
   else if (!strcmp(k, "purge")) valveSet(v != 0);
   else if (!strcmp(k, "cfg"))   valvesApply((BenchConfig)constrain(v, 0, N_CONFIGS - 1));
+  else if (!strcmp(k, "phaseref")) motorSetPhaseRef();   // came posee sur le repere fin d'aspiration
   else if (k[0] == 'v' && k[1] >= '0' && k[1] <= '6' && k[2] == 0) valveDrive(k[1] - '0', v != 0);
   BPB_WebServer.send(200, "application/json", "{}");
 }
@@ -107,8 +113,9 @@ void handleActuator() {
 // ---------- Endpoints de procedure ----------
 void handleStart() {
   String which = BPB_WebServer.arg("procedure");
-  if (which == "test") procedureStart(TESTS, N_TESTS);
-  else                 procedureStart(CALIB, N_CALIB);
+  if      (which == "test")  procedureStart(TESTS, N_TESTS);
+  else if (which == "maint") procedureStart(MAINT,  N_MAINT);
+  else                       procedureStart(CALIB,  N_CALIB);
   BPB_WebServer.send(200, "application/json", "{}");
 }
 
